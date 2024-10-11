@@ -1,0 +1,65 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "simple": {
+            "format": "%(asctime)s [%(levelname)s] %(module)s L%(lineno)d",
+            "datefmt": "%Y-%m-%d %H:%M:%S%z"
+        },
+        "cli": {
+            "format": "[%(levelname)s] %(message)s"
+        },
+        "json": {
+            "()": "app.log.json_log_formatter.JSONFormatter",
+            "fmt_keys": {
+                "level": "levelname",
+                "message": "message",
+                "timestamp": "timestamp",
+                "logger": "name",
+                "module": "module",
+                "function": "funcName",
+                "line": "lineno",
+                "thread_name": "threadName"
+            }
+        }
+    },
+    "handlers": {
+        "stderr": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "cli",
+            "stream": "ext://sys.stderr"
+        },
+        "file_json": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "level": "ERROR",
+            "formatter": "json",
+            "filename": "app/errors/error_logs/capture_stream.jsonl",
+            "encoding": "utf-8",
+            "maxBytes": 20000,
+            "backupCount": 3
+        },
+        "queue_handler": {
+            "class": "logging.handlers.QueueHandler",
+            "handlers": [
+                "stderr",
+                "file_json"
+            ],
+            "respect_handler_level": true
+        }
+    },
+    "loggers": {
+        "root": {
+            "level": "DEBUG",
+            "handlers": [
+                "queue_handler"
+            ]
+        },
+        "httpx": {
+            "handlers": [
+                "stderr"
+            ],
+            "level": "CRITICAL"
+        }
+    }
+}

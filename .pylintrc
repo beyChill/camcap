@@ -1,0 +1,7 @@
+[LOGGING]
+disable=logging-fstring-interpolation,
+        missing-function-docstring,
+        missing-module-docstring,
+
+[FORMAT]
+max-line-length=150,
