@@ -8,7 +8,7 @@ from datetime import datetime
 from time import perf_counter
 from httpx import AsyncClient
 
-from app.database.dbactions import update_details
+from app.database.dbactions import num_online, update_details
 from app.utils.constants import HEADERS_IMG, USERAGENTS
 
 log = getLogger(__name__)
@@ -30,6 +30,7 @@ async def json_scraping():
         )
 
     streamers_online: int = response.json()["total_count"]
+    num_online(streamers_online)
     print("models online:", streamers_online)
 
     data_frame = pd.json_normalize(response.json(), "rooms")
@@ -97,7 +98,6 @@ async def json_scraping():
         remove_next2 = sum(list(remove_nest), [])
 
         list_to_tuple = [tuple(elem) for elem in remove_next2]
-        print("item in gg", len(list_to_tuple))
         update_details(list_to_tuple)
 
     max_urls = [page_urls[x : x + 38] for x in range(0, len(page_urls), 38)]

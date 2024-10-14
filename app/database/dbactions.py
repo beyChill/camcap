@@ -28,7 +28,6 @@ def db_init() -> None:
     if not DB_PATH.exists():
         log.info(colored("Creating database folder", "cyan"))
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-        log.info(colored("Initializing new database", "cyan"))
 
     try:
         with connect() as cursor:
@@ -60,18 +59,27 @@ def add_model(name_: str) -> bool:
         log.error("Failed to add: %s", (colored(name_, "red")))
     return bool(write)
 
+def num_online(data:int):
+    sql="INSERT INTO num_streamers (num_) VALUES (?)"
+    args=(data,)
+    write = _write_to_db(sql,args)
+    if not write:
+        log.error("Failed to add: %s", (colored("online streamers stat", "red")))
+    return bool(write)
 
 def _write_to_db(sql, arg) -> bool:
     try:
         with connect() as cursor:
             write = cursor.execute(sql, arg)
     except sqlite3.Error as error:
+        print(error)
         log.error(error)
         write = None
     return bool(write)
 
-def update_details(m:list):
-    sql=f"""INSERT INTO chaturbate (streamer_name, followers, viewers,last_broadcast) 
+
+def update_details(m: list):
+    sql = f"""INSERT INTO chaturbate (streamer_name, followers, viewers,last_broadcast) 
         VALUES ( ?, ?, ?, ?)
         ON CONFLICT (streamer_name)
         DO UPDATE SET 
@@ -80,9 +88,9 @@ def update_details(m:list):
         last_broadcast=DATETIME(EXCLUDED.last_broadcast, 'unixepoch', 'localtime')"""
     try:
         with connect() as cursor:
-            write=cursor.executemany(sql,m)
+            write = cursor.executemany(sql, m)
     except sqlite3.Error as error:
         log.error(error)
-        write= None
+        write = None
     finally:
         return bool(write)
