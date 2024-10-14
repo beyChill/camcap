@@ -1,6 +1,7 @@
 import asyncio
 from logging import getLogger
 import math
+from threading import Thread
 import httpx
 import pandas as pd
 import random
@@ -44,7 +45,6 @@ async def json_scraping():
     page_calc = streamers_online / 90
 
     pages = math.ceil(page_calc)
-    print("pages:", pages)
     offset = 0
     page_urls: list = []
 
@@ -105,23 +105,25 @@ async def json_scraping():
         await other(url_batch)
 
         if i % len(url_batch) == 0:
-            print("paused:", i)
-            await asyncio.sleep(112.04)
+            await asyncio.sleep(121.04)
 
 
 async def query_streamers():
     while True:
         start = perf_counter()
         await json_scraping()
-        print("Eval time:", perf_counter() - start)
-        print(datetime.now())
+        # convert for debugging log
+        # print("Eval time:", perf_counter() - start)
+        # print(datetime.now())
 
         await asyncio.sleep(360.05)
 
-
-if __name__ != "__main__":
-    # asyncio.run(query_streamers())
-
+def start():
     loop = asyncio.new_event_loop()
     loop.create_task(query_streamers())
     loop.run_forever()
+
+
+def run_query_json():
+    thread = Thread(target=start, daemon=True)
+    thread.start()
