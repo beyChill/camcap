@@ -93,33 +93,45 @@ async def json_scraping():
             async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
                 stat = []
                 stat.append(get_data(client, url))
-                data_stats = await asyncio.gather(*stat)
+                try:
+                    data_stats = await asyncio.gather(*stat,return_exceptions=True)
+                except Exception as e:
+                    print("ERRRRRROOOORRR:", e)
+
         remove_nest = sum(list(data_stats), [])
         remove_next2 = sum(list(remove_nest), [])
 
         list_to_tuple = [tuple(elem) for elem in remove_next2]
         update_details(list_to_tuple)
 
-    max_urls = [page_urls[x : x + 38] for x in range(0, len(page_urls), 38)]
+    max_urls = [page_urls[x : x + 30] for x in range(0, len(page_urls), 30)]
     for i, url_batch in enumerate(max_urls):
         await other(url_batch)
 
         if i % len(url_batch) == 0:
             await asyncio.sleep(121.04)
 
+def exception_handler(loop, context):
+    # get details of the exception
+    exception = context['exception']
+    message = context['message']
+    # log exception
+    print(f'Task failed, msg={message}, exception={exception}')
+    print("***** context ****",context)
 
 async def query_streamers():
     while True:
         start = perf_counter()
         await json_scraping()
         # convert for debugging log
-        # print("Eval time:", perf_counter() - start)
-        # print(datetime.now())
+        print("Eval time:", perf_counter() - start)
+        print(datetime.now())
 
         await asyncio.sleep(360.05)
 
 def start():
     loop = asyncio.new_event_loop()
+    loop.set_exception_handler(exception_handler)
     loop.create_task(query_streamers())
     loop.run_forever()
 
