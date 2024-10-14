@@ -50,15 +50,16 @@
     },
     "loggers": {
         "root": {
-            "level": "DEBUG",
-            "handlers": [
-                "queue_handler"
-            ]
+            "handlers": ["queue_handler"],
+            "level": "DEBUG"
         },
         "httpx": {
-            "handlers": [
-                "stderr"
-            ],
+            "handlers": ["stderr"],
+            "level": "CRITICAL",
+            "propagate": "False"
+        },
+        "httpcore": {
+            "handlers": ["stderr"],
             "level": "CRITICAL"
         }
     }

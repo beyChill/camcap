@@ -177,3 +177,7 @@ app/errors/error_logs/
 
 # test
 p.py
+h.py
+g.py
+*copy*
+

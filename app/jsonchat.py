@@ -1,13 +1,17 @@
 import asyncio
+from logging import getLogger
 import math
+import httpx
 import pandas as pd
 import random
 from datetime import datetime
 from time import perf_counter
 from httpx import AsyncClient
+
 from app.database.dbactions import update_details
 from app.utils.constants import HEADERS_IMG, USERAGENTS
 
+log = getLogger(__name__)
 
 async def json_scraping():
     data_columns: list = []
@@ -19,7 +23,7 @@ async def json_scraping():
         "sec-fetch-mode": "no-cors",
         "sec-fetch-site": "cross-site",
     }
-    async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
+    async with httpx.AsyncClient(headers=HEADERS_IMG, http2=True) as client:
         response = await client.get(
             "https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset=0",
             headers=headers,
@@ -115,7 +119,7 @@ async def query_streamers():
         await asyncio.sleep(360.05)
 
 
-if __name__ == "__main__":
+if __name__ != "__main__":
     # asyncio.run(query_streamers())
 
     loop = asyncio.new_event_loop()

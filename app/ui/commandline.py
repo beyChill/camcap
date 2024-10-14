@@ -6,7 +6,7 @@ from termcolor import colored
 from app.config.settings import get_settings
 from app.database.dbactions import add_model
 from app.errors.uivalidations import CliError, CliValidations
-from app.utils.videosplit import video_time_split
+
 
 config = get_settings()
 
@@ -19,7 +19,9 @@ class Cli(Cmd):
 
     def do_get(self, line) -> None:
         if (data := CliValidations().check_input(line, self.user_prompt)) is None:
+            print('inside:',data)
             return None
+        print("if:",data)
 
     def do_prompt(self, new_prompt) -> None:
         try:
