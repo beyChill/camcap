@@ -51,7 +51,11 @@ def db_init() -> None:
 
 def add_model(name_: str) -> bool:
     today = date.today()
-    sql = f"INSERT INTO chaturbate (streamer_name, query_time, follow) VALUES ( ?, ?, ?) ON CONFLICT (streamer_name) DO UPDATE SET follow='{today}'"
+    sql = f"""INSERT INTO chaturbate (streamer_name, query_time, follow) 
+        VALUES ( ?, ?, ?) 
+        ON CONFLICT (streamer_name) 
+        DO UPDATE SET 
+        follow='{today}'"""
     args = (name_, timegm(time.gmtime()), date.today())
     write = _write_to_db(sql, args)
     if not write:
@@ -67,3 +71,20 @@ def _write_to_db(sql, arg) -> bool:
         log.error(error)
         write = None
     return bool(write)
+
+def update_details(m:list):
+    sql=f"""INSERT INTO chaturbate (streamer_name, followers, viewers,last_broadcast) 
+        VALUES ( ?, ?, ?, ?)
+        ON CONFLICT (streamer_name)
+        DO UPDATE SET 
+        followers=EXCLUDED.followers,
+        viewers=EXCLUDED.viewers, 
+        last_broadcast=DATETIME(EXCLUDED.last_broadcast, 'unixepoch', 'localtime')"""
+    try:
+        with connect() as cursor:
+            write=cursor.executemany(sql,m)
+    except sqlite3.Error as error:
+        log.error(error)
+        write= None
+    finally:
+        return bool(write)
