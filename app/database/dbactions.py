@@ -25,14 +25,12 @@ def connect() -> Generator[sqlite3.Cursor, Any, None]:
 
 
 def db_init() -> None:
-    if DB_PATH.exists():
-        log.info(colored("Database is active", "cyan"))
-        return None
-
-    try:
+    if not DB_PATH.exists():
+        log.info(colored("Creating database folder", "cyan"))
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
         log.info(colored("Initializing new database", "cyan"))
 
+    try:
         with connect() as cursor:
             with open(DB_TABLES, "r", encoding="utf-8") as file:
                 cursor.executescript(file.read())
