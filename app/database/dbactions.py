@@ -46,7 +46,7 @@ def db_init() -> None:
 # ***********************************
 
 
-def add_model(name_: str) -> bool:
+def add_streamer(name_: str) -> bool:
     today = date.today()
     sql = f"""INSERT INTO chaturbate (streamer_name, query_time, follow) 
         VALUES ( ?, ?, ?) 
@@ -59,13 +59,15 @@ def add_model(name_: str) -> bool:
         log.error("Failed to add: %s", (colored(name_, "red")))
     return bool(write)
 
-def num_online(data:int):
-    sql="INSERT INTO num_streamers (num_) VALUES (?)"
-    args=(data,)
-    write = _write_to_db(sql,args)
+
+def num_online(data: int):
+    sql = "INSERT INTO num_streamers (num_) VALUES (?)"
+    args = (data,)
+    write = _write_to_db(sql, args)
     if not write:
         log.error("Failed to add: %s", (colored("online streamers stat", "red")))
     return bool(write)
+
 
 def _write_to_db(sql, arg) -> bool:
     try:
@@ -78,7 +80,7 @@ def _write_to_db(sql, arg) -> bool:
     return bool(write)
 
 
-def update_details(m: list):
+def update_details(values: list):
     sql = f"""INSERT INTO chaturbate (streamer_name, followers, viewers,last_broadcast) 
         VALUES ( ?, ?, ?, ?)
         ON CONFLICT (streamer_name)
@@ -88,7 +90,7 @@ def update_details(m: list):
         last_broadcast=DATETIME(EXCLUDED.last_broadcast, 'unixepoch', 'localtime')"""
     try:
         with connect() as cursor:
-            write = cursor.executemany(sql, m)
+            write = cursor.executemany(sql, values)
     except sqlite3.Error as error:
         log.error(error)
         write = None
