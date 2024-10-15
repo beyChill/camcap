@@ -8,11 +8,18 @@ import random
 from datetime import datetime
 from time import perf_counter
 from httpx import AsyncClient
+import random, string
 
 from app.database.dbactions import num_online, update_details
 from app.utils.constants import HEADERS_IMG, USERAGENTS
 
 log = getLogger(__name__)
+
+
+def random_id(length):
+   letters = string.ascii_lowercase
+   return "a9a9a"+''.join(random.choice(letters) for i in range(length))
+
 
 async def json_scraping():
     data_columns: list = []
@@ -72,11 +79,11 @@ async def json_scraping():
         if not response.headers.get("Content-Type").startswith("application/json"):
             print(response.status_code)
             await asyncio.sleep(90)
-            return [None, 0, 0, 0]
+            return [random_id(10), 0, 0, 141741717]
 
         if response.status_code != 200:
             print("code:", response.status_code)
-            return [None, 0, 0, 0]
+            return [random_id(10), 0, 0, 141741717]
 
         data_frame = pd.json_normalize(response.json(), "rooms")
 
@@ -93,8 +100,9 @@ async def json_scraping():
             async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
                 stat = []
                 stat.append(get_data(client, url))
+                await asyncio.sleep(1.04)
                 try:
-                    data_stats = await asyncio.gather(*stat,return_exceptions=True)
+                    data_stats = await asyncio.gather(*stat)
                 except Exception as e:
                     print("ERRRRRROOOORRR:", e)
 
