@@ -96,15 +96,17 @@ async def json_scraping():
         return data_columns
 
     async def other(urls: list):
-        for url in urls:
-            async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
-                stat = []
+        async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
+            stat = []
+            for url in urls:
                 stat.append(get_data(client, url))
-                await asyncio.sleep(1.04)
-                try:
-                    data_stats = await asyncio.gather(*stat)
-                except Exception as e:
-                    print("ERRRRRROOOORRR:", e)
+
+            try:
+                # await asyncio.sleep(1.04)
+                data_stats = await asyncio.gather(*stat)
+            except Exception as e:
+                print(url)
+                print("ERRRRRROOOORRR:", e)
 
         remove_nest = sum(list(data_stats), [])
         remove_next2 = sum(list(remove_nest), [])
@@ -115,9 +117,9 @@ async def json_scraping():
     max_urls = [page_urls[x : x + 30] for x in range(0, len(page_urls), 30)]
     for i, url_batch in enumerate(max_urls):
         await other(url_batch)
-
+        
         if i % len(url_batch) == 0:
-            await asyncio.sleep(121.04)
+            await asyncio.sleep(1.04)
 
 def exception_handler(loop, context):
     # get details of the exception
