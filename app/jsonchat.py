@@ -17,8 +17,8 @@ log = getLogger(__name__)
 
 
 def random_id(length):
-   letters = string.ascii_lowercase
-   return "a9a9a"+''.join(random.choice(letters) for i in range(length))
+    letters = string.ascii_lowercase
+    return "a9a9a" + "".join(random.choice(letters) for i in range(length))
 
 
 async def json_scraping():
@@ -49,13 +49,16 @@ async def json_scraping():
         ].values.tolist()
     )
 
-    page_calc = streamers_online / 90
+    # Number of urls to generate based on 90 streamers per url
+    # Sometimes the final predetermined url will no longer exist, causing a crash.
+    # Subtracting 1 removes the final url.
+    # At most data for bottom 90 models will be missed on this api call
+    num_urls = math.ceil(streamers_online / 90) - 1
 
-    pages = math.ceil(page_calc)
     offset = 0
-    page_urls: list = []
+    page_urls: list[str] = []
 
-    for _ in range(1, pages):
+    for _ in range(1, num_urls):
         offset += 90
         page_urls.append(
             f"https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset={offset}"
@@ -63,27 +66,28 @@ async def json_scraping():
 
     async def get_data(client: AsyncClient, url):
         headers = {
-            "user-agent": random.choice(USERAGENTS),
-            "accept-encoding": "gzip, deflate, br",
-            "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-            "sec-fetch-dest": "image",
-            "sec-fetch-mode": "no-cors",
-            "sec-fetch-site": "cross-site",
+            "User-Agent": random.choice(USERAGENTS),
+            "Cache-Control": "no-cache",
+            "Accept-encoding": "gzip, deflate, br, zstd",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "cross-site",
         }
-        response = await client.get(
-            url,
-            headers=headers,
-            timeout=35,
-        )
 
-        if not response.headers.get("Content-Type").startswith("application/json"):
-            print(response.status_code)
-            await asyncio.sleep(90)
-            return [random_id(10), 0, 0, 141741717]
+        response = await client.get(url, headers=headers, timeout=25)
+
+        if response.status_code == 429:
+            print("code:", response.status_code, datetime.now())
+            return [[random_id(10), 0, 0, 971639231]]
 
         if response.status_code != 200:
-            print("code:", response.status_code)
-            return [random_id(10), 0, 0, 141741717]
+            print("code:", response.status_code, "- not 200")
+            return [[random_id(10), 0, 0, 971639231]]
+
+        # json will element will have lenght of zero when url doesn't match chaturbate api offerings
+        if len(response.json()["rooms"]) < 1:
+            return [[random_id(10), 0, 0, 971639231]]
 
         data_frame = pd.json_normalize(response.json(), "rooms")
 
@@ -108,36 +112,44 @@ async def json_scraping():
                 print(url)
                 print("ERRRRRROOOORRR:", e)
 
+        # test better solution to remove double nested list
         remove_nest = sum(list(data_stats), [])
         remove_next2 = sum(list(remove_nest), [])
 
         list_to_tuple = [tuple(elem) for elem in remove_next2]
         update_details(list_to_tuple)
 
-    max_urls = [page_urls[x : x + 30] for x in range(0, len(page_urls), 30)]
+    # minimize response code 429. Seems chaturbate api rate limit is bassed on site traffic.
+    # limit could be 40-60 call
+    rate_limit = math.floor(num_urls / 2)
+    max_urls = [
+        page_urls[x : x + rate_limit] for x in range(0, len(page_urls), rate_limit)
+    ]
+
     for i, url_batch in enumerate(max_urls):
+        print(i, len(url_batch), datetime.now())
         await other(url_batch)
-        
-        if i % len(url_batch) == 0:
-            await asyncio.sleep(1.04)
+
+        if i == 0:
+            print("     waiting 2 min", datetime.now())
+            await asyncio.sleep(110.04)
+
 
 def exception_handler(loop, context):
-    # get details of the exception
-    exception = context['exception']
-    message = context['message']
-    # log exception
-    print(f'Task failed, msg={message}, exception={exception}')
-    print("***** context ****",context)
+    print(context["exception"])
+    print(context["message"])
+
 
 async def query_streamers():
     while True:
         start = perf_counter()
         await json_scraping()
-        # convert for debugging log
+        # convert to log events
         print("Eval time:", perf_counter() - start)
         print(datetime.now())
 
         await asyncio.sleep(360.05)
+
 
 def start():
     loop = asyncio.new_event_loop()
