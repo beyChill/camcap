@@ -51,9 +51,8 @@ async def json_scraping():
 
     # Number of urls to generate based on 90 streamers per url
     # Sometimes the final predetermined url will no longer exist, causing a crash.
-    # Subtracting 1 removes the final url.
-    # At most data for bottom 90 models will be missed on this api call
-    num_urls = math.ceil(streamers_online / 90) - 1
+    # Reversing urls in list helps.
+    num_urls = math.ceil(streamers_online / 90)
 
     offset = 0
     page_urls: list[str] = []
@@ -63,7 +62,7 @@ async def json_scraping():
         page_urls.append(
             f"https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset={offset}"
         )
-
+        page_urls.reverse()
     async def get_data(client: AsyncClient, url):
         headers = {
             "User-Agent": random.choice(USERAGENTS),
