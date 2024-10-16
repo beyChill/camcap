@@ -10,6 +10,13 @@ class Streamer(NamedTuple):
     site_slug: str
     site: str
 
+class ModelData(NamedTuple):
+    name_: str
+    site: str
+    url: str
+    path_: Path
+    file: str
+    metadata: list
 
 VALIDSITES = {"cb", "mfc", "sc"}
 
