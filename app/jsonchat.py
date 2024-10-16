@@ -63,6 +63,7 @@ async def json_scraping():
             f"https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset={offset}"
         )
         page_urls.reverse()
+
     async def get_data(client: AsyncClient, url):
         headers = {
             "User-Agent": random.choice(USERAGENTS),
@@ -98,18 +99,17 @@ async def json_scraping():
 
         return data_columns
 
-    async def other(urls: list):
+    async def process_urls(urls: list[str]):
         async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
             stat = []
             for url in urls:
                 stat.append(get_data(client, url))
 
             try:
-                # await asyncio.sleep(1.04)
                 data_stats = await asyncio.gather(*stat)
             except Exception as e:
                 print(url)
-                print("ERRRRRROOOORRR:", e)
+                print("Error:", e)
 
         # test better solution to remove double nested list
         remove_nest = sum(list(data_stats), [])
@@ -126,11 +126,11 @@ async def json_scraping():
     ]
 
     for i, url_batch in enumerate(max_urls):
-        print(i, len(url_batch), datetime.now())
-        await other(url_batch)
+        await process_urls(url_batch)
 
+        # delay to prevent triggering rate limit
+        # sleep time can be adjusted up / down till limit (response code:429 is reached)
         if i == 0:
-            print("     waiting 2 min", datetime.now())
             await asyncio.sleep(110.04)
 
 
@@ -144,8 +144,8 @@ async def query_streamers():
         start = perf_counter()
         await json_scraping()
         # convert to log events
-        print("Eval time:", perf_counter() - start)
-        print(datetime.now())
+        # print("Eval time:", perf_counter() - start)
+        # print(datetime.now())
 
         await asyncio.sleep(360.05)
 
