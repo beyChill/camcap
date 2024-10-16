@@ -10,7 +10,7 @@ from time import perf_counter
 from httpx import AsyncClient
 import random, string
 
-from app.database.dbactions import num_online, update_details
+from app.database.dbactions import num_online, db_update_streamers
 from app.utils.constants import HEADERS_IMG, USERAGENTS
 
 log = getLogger(__name__)
@@ -39,7 +39,7 @@ async def json_scraping():
 
     streamers_online: int = response.json()["total_count"]
     num_online(streamers_online)
-    print("models online:", streamers_online)
+    print("Streamers online:", streamers_online, datetime.now())
 
     data_frame = pd.json_normalize(response.json(), "rooms")
 
@@ -99,7 +99,7 @@ async def json_scraping():
 
         return data_columns
 
-    async def process_urls(urls: list[str]):
+    async def process_urls(urls: list[str]) -> None:
         async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
             stat = []
             for url in urls:
@@ -116,7 +116,9 @@ async def json_scraping():
         remove_next2 = sum(list(remove_nest), [])
 
         list_to_tuple = [tuple(elem) for elem in remove_next2]
-        update_details(list_to_tuple)
+
+        # write to database
+        db_update_streamers(list_to_tuple)
 
     # minimize response code 429. Seems chaturbate api rate limit is bassed on site traffic.
     # limit could be 40-60 call
