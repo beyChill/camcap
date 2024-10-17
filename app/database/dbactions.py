@@ -81,13 +81,15 @@ def _write_to_db(sql, arg) -> bool:
 
 
 def db_update_streamers(values: list):
-    sql = f"""INSERT INTO chaturbate (streamer_name, followers, viewers,last_broadcast) 
+    sql = """INSERT INTO chaturbate (streamer_name, followers, viewers, last_broadcast) 
         VALUES ( ?, ?, ?, ?)
         ON CONFLICT (streamer_name)
         DO UPDATE SET 
         followers=EXCLUDED.followers,
         viewers=EXCLUDED.viewers, 
-        last_broadcast=DATETIME(EXCLUDED.last_broadcast, 'unixepoch', 'localtime')"""
+        last_broadcast=DATETIME(EXCLUDED.last_broadcast, 'unixepoch', 'localtime'),
+        most_viewers=MAX(most_viewers, EXCLUDED.viewers)
+        """
     try:
         with connect() as cursor:
             write = cursor.executemany(sql, values)
