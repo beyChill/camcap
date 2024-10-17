@@ -4,14 +4,16 @@ from pathlib import Path
 from typing import Any
 from app.config.settings import get_settings
 from app.database.dbactions import add_streamer
-from app.utils.constants import ModelData
+from app.utils.constants import ModelData, Streamer
+from collections.abc import Callable
 
 config = get_settings()
 
-@dataclass(slots=True)
-class FileSvs():
 
-    def set_video_path(self, name_, site, dir=config.VIDEO_DIR):
+@dataclass(slots=True)
+class FileSvs:
+
+    def set_video_path(self, name_, site, dir=config.VIDEO_DIR) -> Path:
         save_dir = Path(dir, site, name_).joinpath()
         return save_dir
 
@@ -23,41 +25,43 @@ class FileSvs():
 
 @dataclass(slots=True, eq=False)
 class CreateStreamer:
-    name_: InitVar[str]
-    site_slug: InitVar[str]
-    site_name: InitVar[str]
+    streamer_data: InitVar[Streamer]
+    name_: str = field(init=False)
+    site_slug: str = field(init=False)
+    site_name: str = field(init=False)
     path_: Path = field(init=False)
     filename: str = field(init=False)
     url: str = field(init=False)
-    file_svs: Any = field(init=False)
+    file_svs: Callable = field(init=False)
     metadata: list = field(init=False)
     return_data: ModelData = field(default=None, init=False)
 
-    def __post_init__(self, name_, site_slug, site_name, filesvs=lambda: FileSvs()):
+    def __post_init__(self, streamer_data: Streamer, filesvs=lambda: FileSvs()):
+        self.name_, self.site_slug, self.site_name = streamer_data
 
-        self.file_svs= filesvs()
-        self.url='http'
+        
+
+        self.file_svs = filesvs()
+        self.url = "http"
         success = True
         if not success:
             del self
             return None
-        
-        add_streamer(name_)
+
         if self.url is not None:
-            self.path_ = self.file_svs.set_video_path(name_, site_name)
-            self.filename = self.file_svs.set_filename(name_, site_slug)
-            self.metadata = self.set_metadata(name_, site_name)
+            self.path_ = self.file_svs.set_video_path(self.name_, self.site_name)
+            self.filename = self.file_svs.set_filename(self.name_, self.site_slug)
+            self.metadata = self.set_metadata(self.name_, self.site_name)
             self.return_data = ModelData(
-                name_,
-                site_name,
+                self.name_,
+                self.site_name,
                 self.url,
                 self.path_,
                 self.filename,
                 self.metadata,
             )
-        
-        del self
 
+        del self
 
     def set_metadata(self, name_, site) -> list:
         metadata = []
@@ -89,7 +93,3 @@ class CreateStreamer:
         return ModelData(
             self.site_name, self.url, self.path_, self.filename, self.metadata
         )
-
-
-
-
