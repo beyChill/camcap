@@ -1,45 +1,43 @@
 import asyncio
-from logging import getLogger
+from logging import  getLogger
 import math
 from threading import Thread
 import httpx
 import pandas as pd
-import random
 from datetime import datetime
-from time import perf_counter
+from time import perf_counter, strftime
 from httpx import AsyncClient
-import random, string
+from random import randint, choice
+from string import ascii_lowercase
 
 from app.database.dbactions import num_online, db_update_streamers
 from app.utils.constants import HEADERS_IMG, USERAGENTS
 
 log = getLogger(__name__)
 
+def random_id(length) -> str:
+    letters = ascii_lowercase
+    return "a9a9a" + "".join(choice(letters) for i in range(length))
 
-def random_id(length):
-    letters = string.ascii_lowercase
-    return "a9a9a" + "".join(random.choice(letters) for i in range(length))
-
-
-async def json_scraping():
+async def json_scraping() -> None:
     data_columns: list = []
     headers = {
-        "user-agent": random.choice(USERAGENTS),
+        "user-agent": choice(USERAGENTS),
         "accept-encoding": "gzip, deflate, br",
         "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
         "sec-fetch-dest": "image",
         "sec-fetch-mode": "no-cors",
         "sec-fetch-site": "cross-site",
     }
-    async with httpx.AsyncClient(headers=HEADERS_IMG, http2=True) as client:
+    async with httpx.AsyncClient(headers=HEADERS_IMG,http2=True) as client:
         response = await client.get(
             "https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset=0",
             headers=headers,
         )
-
+ 
     streamers_online: int = response.json()["total_count"]
     num_online(streamers_online)
-    print("Streamers online:", streamers_online, datetime.now())
+    print(strftime("%H:%M:%S"),"- Streamers online:", streamers_online)
 
     data_frame = pd.json_normalize(response.json(), "rooms")
 
@@ -62,11 +60,11 @@ async def json_scraping():
         page_urls.append(
             f"https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset={offset}"
         )
-        page_urls.reverse()
+    page_urls.reverse()
 
     async def get_data(client: AsyncClient, url):
         headers = {
-            "User-Agent": random.choice(USERAGENTS),
+            "User-Agent": choice(USERAGENTS),
             "Cache-Control": "no-cache",
             "Accept-encoding": "gzip, deflate, br, zstd",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8",
@@ -85,7 +83,7 @@ async def json_scraping():
             print("code:", response.status_code, "- not 200")
             return [[random_id(10), 0, 0, 971639231]]
 
-        # json will element will have lenght of zero when url doesn't match chaturbate api offerings
+        # Zero lenght element means url offset doesn't exist
         if len(response.json()["rooms"]) < 1:
             return [[random_id(10), 0, 0, 971639231]]
 
@@ -100,7 +98,7 @@ async def json_scraping():
         return data_columns
 
     async def process_urls(urls: list[str]) -> None:
-        async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
+        async with AsyncClient(headers=HEADERS_IMG,http2=True) as client:
             stat = []
             for url in urls:
                 stat.append(get_data(client, url))
@@ -122,7 +120,9 @@ async def json_scraping():
 
     # minimize response code 429. Seems chaturbate api rate limit is bassed on site traffic.
     # limit could be 40-60 call
+    # If online streamers exceed 7200ish probaby need to rewrite to avoid rate limit
     rate_limit = math.floor(num_urls / 2)
+
     max_urls = [
         page_urls[x : x + rate_limit] for x in range(0, len(page_urls), rate_limit)
     ]
@@ -131,12 +131,13 @@ async def json_scraping():
         await process_urls(url_batch)
 
         # delay to prevent triggering rate limit
-        # sleep time can be adjusted up / down till limit (response code:429 is reached)
+        # sleep time can be adjusted up / down till limit (response code:429 occurs)
+        # error on the side of caution using short delay. 
         if i == 0:
-            await asyncio.sleep(110.04)
+            await asyncio.sleep(randint(110,140))
 
 
-def exception_handler(loop, context):
+def exception_handler(loop, context) -> None:
     print(context["exception"])
     print(context["message"])
 
@@ -146,19 +147,21 @@ async def query_streamers():
         start = perf_counter()
         await json_scraping()
         # convert to log events
-        # print("Eval time:", perf_counter() - start)
-        # print(datetime.now())
+        print("Processed urls in:", perf_counter() - start,"seconds")
+        print(strftime("%H:%M:%S"),"- Json query completed:")
 
-        await asyncio.sleep(360.05)
+        #Delay allows api rest between queries
+        await asyncio.sleep(randint(360, 600))
 
 
-def start():
+
+def start() -> None:
     loop = asyncio.new_event_loop()
     loop.set_exception_handler(exception_handler)
     loop.create_task(query_streamers())
     loop.run_forever()
 
 
-def run_query_json():
+def run_query_json() -> None:
     thread = Thread(target=start, daemon=True)
     thread.start()
