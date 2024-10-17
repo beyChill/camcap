@@ -1,5 +1,5 @@
 import asyncio
-from logging import  getLogger
+from logging import getLogger
 import math
 from threading import Thread
 import httpx
@@ -15,12 +15,17 @@ from app.utils.constants import HEADERS_IMG, USERAGENTS
 
 log = getLogger(__name__)
 
+
 def random_id(length) -> str:
     letters = ascii_lowercase
     return "a9a9a" + "".join(choice(letters) for i in range(length))
 
+
 async def json_scraping() -> None:
     data_columns: list = []
+    offset = 0
+    page_urls: list[str] = []
+
     headers = {
         "user-agent": choice(USERAGENTS),
         "accept-encoding": "gzip, deflate, br",
@@ -29,15 +34,15 @@ async def json_scraping() -> None:
         "sec-fetch-mode": "no-cors",
         "sec-fetch-site": "cross-site",
     }
-    async with httpx.AsyncClient(headers=HEADERS_IMG,http2=True) as client:
+    async with httpx.AsyncClient(headers=HEADERS_IMG, http2=True) as client:
         response = await client.get(
             "https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset=0",
             headers=headers,
         )
- 
+
     streamers_online: int = response.json()["total_count"]
     num_online(streamers_online)
-    print(strftime("%H:%M:%S"),"- Streamers online:", streamers_online)
+    print(strftime("%H:%M:%S"), "- Streamers online:", streamers_online)
 
     data_frame = pd.json_normalize(response.json(), "rooms")
 
@@ -48,18 +53,16 @@ async def json_scraping() -> None:
     )
 
     # Number of urls to generate based on 90 streamers per url
-    # Sometimes the final predetermined url will no longer exist, causing a crash.
-    # Reversing urls in list helps.
     num_urls = math.ceil(streamers_online / 90)
-
-    offset = 0
-    page_urls: list[str] = []
 
     for _ in range(1, num_urls):
         offset += 90
         page_urls.append(
             f"https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset={offset}"
         )
+
+    # Sometimes the final predetermined url will no longer exist, causing a crash.
+    # Reversing url sequence in list helps.
     page_urls.reverse()
 
     async def get_data(client: AsyncClient, url):
@@ -75,12 +78,8 @@ async def json_scraping() -> None:
 
         response = await client.get(url, headers=headers, timeout=25)
 
-        if response.status_code == 429:
-            print("code:", response.status_code, datetime.now())
-            return [[random_id(10), 0, 0, 971639231]]
-
         if response.status_code != 200:
-            print("code:", response.status_code, "- not 200")
+            print("code:", response.status_code)
             return [[random_id(10), 0, 0, 971639231]]
 
         # Zero lenght element means url offset doesn't exist
@@ -98,7 +97,7 @@ async def json_scraping() -> None:
         return data_columns
 
     async def process_urls(urls: list[str]) -> None:
-        async with AsyncClient(headers=HEADERS_IMG,http2=True) as client:
+        async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
             stat = []
             for url in urls:
                 stat.append(get_data(client, url))
@@ -132,9 +131,9 @@ async def json_scraping() -> None:
 
         # delay to prevent triggering rate limit
         # sleep time can be adjusted up / down till limit (response code:429 occurs)
-        # error on the side of caution using short delay. 
+        # error on the side of caution using short delay.
         if i == 0:
-            await asyncio.sleep(randint(110,140))
+            await asyncio.sleep(randint(110, 140))
 
 
 def exception_handler(loop, context) -> None:
@@ -147,12 +146,11 @@ async def query_streamers():
         start = perf_counter()
         await json_scraping()
         # convert to log events
-        print("Processed urls in:", perf_counter() - start,"seconds")
-        print(strftime("%H:%M:%S"),"- Json query completed:")
+        print("Processed urls in:", perf_counter() - start, "seconds")
+        print(strftime("%H:%M:%S"), "- Json query completed:")
 
-        #Delay allows api rest between queries
+        # Delay allows api rest between queries
         await asyncio.sleep(randint(360, 600))
-
 
 
 def start() -> None:
