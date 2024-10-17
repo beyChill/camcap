@@ -60,7 +60,23 @@
         },
         "httpcore": {
             "handlers": ["stderr"],
-            "level": "CRITICAL"
+            "level": "CRITICAL",
+            "propagate": "False"
+        },
+        "httpcore.http2": {
+            "handlers": ["stderr"],
+            "level": "CRITICAL",
+            "propagate": "False"
+        },
+        "asyncio": {
+            "handlers": ["stderr"],
+            "level": "CRITICAL",
+            "propagate": "False"
+        },
+        "hpack": {
+            "handlers": ["stderr"],
+            "level": "CRITICAL",
+            "propagate": "False"
         }
     }
 }
