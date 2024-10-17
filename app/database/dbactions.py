@@ -80,7 +80,7 @@ def _write_to_db(sql, arg) -> bool:
     return bool(write)
 
 
-def update_details(values: list):
+def db_update_streamers(values: list):
     sql = f"""INSERT INTO chaturbate (streamer_name, followers, viewers,last_broadcast) 
         VALUES ( ?, ?, ?, ?)
         ON CONFLICT (streamer_name)
