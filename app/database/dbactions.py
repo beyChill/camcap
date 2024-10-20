@@ -1,13 +1,10 @@
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from logging import getLogger
-from pathlib import Path
 import sqlite3
-import time
 from typing import Any, Dict
-from datetime import date, datetime
+from datetime import datetime
 from termcolor import colored
-from calendar import timegm
 from app.config.settings import get_settings
 from app.utils.constants import DbAddStreamer, StreamerWithPid
 
@@ -23,11 +20,11 @@ DB_TABLES = config.DB_TABLES
 @contextmanager
 def connect() -> Generator[sqlite3.Cursor, Any, None]:
     with sqlite3.connect(DB_PATH) as connect:
-        connect.execute('PRAGMA synchronous=OFF')
-        connect.execute('PRAGMA  journal_mode=WAL')
-        connect.execute('PRAGMA temp_store=memory')
-        connect.execute('PRAGMA mmap_size=30000000000')
-        connect.execute('PRAGMA page_size=32768')
+        connect.execute("PRAGMA synchronous=OFF")
+        connect.execute("PRAGMA  journal_mode=WAL")
+        connect.execute("PRAGMA temp_store=memory")
+        connect.execute("PRAGMA mmap_size=30000000000")
+        connect.execute("PRAGMA page_size=32768")
         yield connect.cursor()
 
 
@@ -51,20 +48,22 @@ def db_init() -> None:
 # * WRITE
 # ***********************************
 
+
 def db_update_pid(arg: StreamerWithPid):
-    sql = "Update models SET pid=?, last_capture=? WHERE model_name=?"
-    args = (arg.pid, datetime.now().replace(microseconds=0), arg.model_name)
+    sql = "Update chaturbate SET pid=?, last_capture=?, last_broadcast=? WHERE streamer_name=?"
+    args = (arg.pid, config.datetime, config.datetime, arg.streamer_name)
     if not _write_to_db(sql, args):
-        log.error("Data write failed: %s ", (colored(f"{arg.model_name}", "red")))
+        log.error("Data write failed: %s ", (colored(f"{arg.streamer_name}", "red")))
         return
-    log.info("capturing %s", (colored(arg.model_name, "green")))
+    log.info("capturing %s", (colored(arg.streamer_name, "green")))
 
 
 def db_remove_pid(pid):
-    sql = "UPDATE models SET pid=? WHERE pid=?"
+    sql = "UPDATE chaturbate SET pid=? WHERE pid=?"
     arg = (None, pid)
     if not _write_to_db(sql, arg):
-        log.error(colored("Unable to reset the pid for the model", "red"))
+        log.error(colored("Unable to reset the pid for the streamer", "red"))
+
 
 def db_add_streamer(name_: str) -> tuple:
     today = datetime.now().replace(microsecond=0)
@@ -76,7 +75,7 @@ def db_add_streamer(name_: str) -> tuple:
     args = (name_, today)
     write = _write_to_db(sql, args)
     query = query_db("cap_status", name_)
-    
+
     if not write:
         log.error("Failed to add: %s", (colored(name_, "red")))
     return DbAddStreamer(bool(write), *query)
@@ -127,7 +126,7 @@ def db_update_streamers(values: list):
 # ************************************
 
 
-def db_cap_status(name_):
+def _db_cap_status(name_):
     return (
         "SELECT follow, block_date FROM chaturbate WHERE streamer_name=?",
         (name_,),
@@ -139,7 +138,7 @@ def fetchone(cursor) -> sqlite3.Cursor:
 
 
 QUERY_DICT: Dict[str, Callable] = {
-    "cap_status": db_cap_status,
+    "cap_status": _db_cap_status,
 }
 
 CURSOR_DICT: Dict[str, Callable] = {
