@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime
 from time import perf_counter, strftime
 from httpx import AsyncClient
-from random import randint, choice
+from random import randint, choice, shuffle
 from string import ascii_lowercase
 
 from app.database.dbactions import num_online, db_update_streamers
@@ -18,7 +18,7 @@ log = getLogger(__name__)
 
 def random_id(length) -> str:
     letters = ascii_lowercase
-    return "a9a9a" + "".join(choice(letters) for i in range(length))
+    return "a9a9a" + "".join(choice(letters) for _ in range(length))
 
 
 async def json_scraping() -> None:
@@ -62,8 +62,11 @@ async def json_scraping() -> None:
         )
 
     # Sometimes the final predetermined url will no longer exist, causing a crash.
-    # Reversing url sequence in list helps.
+    # Process last url first, randomize the rest.
     page_urls.reverse()
+    first_url = page_urls.pop(0)
+    shuffle(page_urls)
+    page_urls.insert(0, first_url)
 
     async def get_data(client: AsyncClient, url):
         headers = {
@@ -96,16 +99,15 @@ async def json_scraping() -> None:
 
         return data_columns
 
-    async def process_urls(urls: list[str]) -> None:
+    async def process_urls(urls: list[str], i: int) -> None:
         async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
             stat = []
-            for url in urls:
-                stat.append(get_data(client, url))
+
+            [stat.append(get_data(client, url)) for url in urls]
 
             try:
                 data_stats = await asyncio.gather(*stat)
             except Exception as e:
-                print(url)
                 print("Error:", e)
 
         # test better solution to remove double nested list
@@ -117,6 +119,12 @@ async def json_scraping() -> None:
         # write to database
         db_update_streamers(list_to_tuple)
 
+        # delay to prevent triggering rate limit
+        # sleep time can be adjusted up / down till limit (response code:429 occurs)
+        # error on the side of caution using short delay.
+        if i == 0:
+            await asyncio.sleep(randint(110, 140))
+
     # minimize response code 429. Seems chaturbate api rate limit is bassed on site traffic.
     # limit could be 40-60 call
     # If online streamers exceed 7200ish probaby need to rewrite to avoid rate limit
@@ -126,14 +134,11 @@ async def json_scraping() -> None:
         page_urls[x : x + rate_limit] for x in range(0, len(page_urls), rate_limit)
     ]
 
-    for i, url_batch in enumerate(max_urls):
-        await process_urls(url_batch)
-
-        # delay to prevent triggering rate limit
-        # sleep time can be adjusted up / down till limit (response code:429 occurs)
-        # error on the side of caution using short delay.
-        if i == 0:
-            await asyncio.sleep(randint(110, 140))
+    try:    
+        [await process_urls(url_batch, i) for i, url_batch in enumerate(max_urls)]
+    except Exception as e:
+        print("list comprehension error, process_urls and i iterator")
+        print(e)
 
 
 def exception_handler(loop, context) -> None:
@@ -146,11 +151,11 @@ async def query_streamers():
         start = perf_counter()
         await json_scraping()
         # convert to log events
-        print("Processed urls in:", perf_counter() - start, "seconds")
-        print(strftime("%H:%M:%S"), "- Json query completed:")
+        print("\t", "Processed urls in:", perf_counter() - start, "seconds")
+        print("\t", strftime("%H:%M:%S"), "- Json query completed:")
 
         # Delay allows api rest between queries
-        await asyncio.sleep(randint(360, 600))
+        await asyncio.sleep(randint(240, 300))
 
 
 def start() -> None:

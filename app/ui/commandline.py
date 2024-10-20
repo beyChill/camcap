@@ -6,13 +6,11 @@ from termcolor import colored
 from app.config.settings import get_settings
 
 
-from app.database.dbactions import add_streamer
+from app.database.dbactions import db_add_streamer
 from app.errors.uivalidations import CliError, CliValidations
 from app.sites.chaturbate_streamer import CreateStreamer
 
-
 config = get_settings()
-
 
 class Cli(Cmd):
     file = None
@@ -21,11 +19,16 @@ class Cli(Cmd):
     prompt = colored(f"{user_prompt}-> ", "green")
 
     def do_get(self, line) -> None:
-        if (data := CliValidations().check_input(line, self.user_prompt)) is None:
+        if None in (data := CliValidations().check_input(line, self.user_prompt)):
             return None
 
-        streamer_data = CreateStreamer(data).return_data
-        add_streamer(streamer_data.name_)
+        if None in (streamer_data := CreateStreamer(data).return_data):
+            return None
+        
+        if not None in db_add_streamer(streamer_data.name_):
+            return None
+
+        # CaptureStreamer(streamer_data)
 
     def do_prompt(self, new_prompt) -> None:
         try:

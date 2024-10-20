@@ -1,10 +1,13 @@
+import asyncio
 from dataclasses import InitVar, dataclass, field
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 from app.config.settings import get_settings
-from app.database.dbactions import add_streamer
-from app.utils.constants import ModelData, Streamer
+
+# from app.database.dbactions import db_add_streamer
+from app.sites.getstreamerurl import get_streamer_url
+from app.utils.constants import StreamerData, Streamer
 from collections.abc import Callable
 
 config = get_settings()
@@ -29,39 +32,43 @@ class CreateStreamer:
     name_: str = field(init=False)
     site_slug: str = field(init=False)
     site_name: str = field(init=False)
-    path_: Path = field(init=False)
-    filename: str = field(init=False)
-    url: str = field(init=False)
+    path_: Path = field(default=None, init=False)
+    filename: str = field(default=None, init=False)
+    url: str = field(default=None, init=False)
     file_svs: Callable = field(init=False)
-    metadata: list = field(init=False)
-    return_data: ModelData = field(default=None, init=False)
+    metadata: list = field(default=None, init=False)
+    return_data: StreamerData = field(default=None, init=False)
+    success: bool = field(default=None, init=False)
+    room_status: str = field(default=None, init=False)
 
     def __post_init__(self, streamer_data: Streamer, filesvs=lambda: FileSvs()):
         self.name_, self.site_slug, self.site_name = streamer_data
 
-        
-
         self.file_svs = filesvs()
-        self.url = "http"
-        success = True
-        if not success:
-            del self
-            return None
 
-        if self.url is not None:
-            self.path_ = self.file_svs.set_video_path(self.name_, self.site_name)
-            self.filename = self.file_svs.set_filename(self.name_, self.site_slug)
-            self.metadata = self.set_metadata(self.name_, self.site_name)
-            self.return_data = ModelData(
-                self.name_,
-                self.site_name,
-                self.url,
-                self.path_,
-                self.filename,
-                self.metadata,
-            )
+        asyncio.run(self.get_url())
+
+        if self.success is None:
+            try:
+                self.return_data = self.return_dat()
+                return self.return_data
+            finally:
+                del self
+
+        self.path_ = self.file_svs.set_video_path(self.name_, self.site_name)
+        self.filename = self.file_svs.set_filename(self.name_, self.site_slug)
+        self.metadata = self.set_metadata(self.name_, self.site_name)
+        self.return_data = self.return_dat()
 
         del self
+
+    async def get_url(self):
+        if None in (response := await get_streamer_url(self.name_)):
+            return self.return_dat()
+        
+        self.success = response.success
+        self.url = response.url
+        self.room_status = response.room_status
 
     def set_metadata(self, name_, site) -> list:
         metadata = []
@@ -86,10 +93,14 @@ class CreateStreamer:
         # format for ffmpeg use
         for key, value in meta.items():
             metadata.extend(["-metadata", f"{key}={value}"])
-
         return metadata
 
-    def return_dat(self) -> ModelData:
-        return ModelData(
-            self.site_name, self.url, self.path_, self.filename, self.metadata
+    def return_dat(self) -> StreamerData:
+        return StreamerData(
+            self.name_,
+            self.site_name,
+            self.url,
+            self.path_,
+            self.filename,
+            self.metadata,
         )

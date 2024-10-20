@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 import sys
 from typing import NamedTuple
@@ -10,13 +11,23 @@ class Streamer(NamedTuple):
     site_slug: str
     site: str
 
-class ModelData(NamedTuple):
+class StreamerData(NamedTuple):
     name_: str
     site: str
     url: str
     path_: Path
     file: str
     metadata: list
+
+class DbAddStreamer(NamedTuple):
+    write:bool
+    follow:datetime
+    block: datetime
+
+class GetStreamerUrl(NamedTuple):
+    success:str
+    url:str
+    room_status:str
 
 VALIDSITES = {"cb", "mfc", "sc"}
 
