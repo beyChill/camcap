@@ -6,6 +6,7 @@ from typing import Any
 from app.config.settings import get_settings
 
 # from app.database.dbactions import db_add_streamer
+from app.database.dbactions import db_add_streamer
 from app.sites.getstreamerurl import get_streamer_url
 from app.utils.constants import StreamerData, Streamer
 from collections.abc import Callable
@@ -48,12 +49,14 @@ class CreateStreamer:
 
         asyncio.run(self.get_url())
 
-        if self.success is None:
+        if not bool(self.success):
             try:
                 self.return_data = self.return_dat()
                 return self.return_data
             finally:
                 del self
+                
+        db_add_streamer(self.name_)
 
         self.path_ = self.file_svs.set_video_path(self.name_, self.site_name)
         self.filename = self.file_svs.set_filename(self.name_, self.site_slug)
@@ -64,6 +67,7 @@ class CreateStreamer:
 
     async def get_url(self):
         if None in (response := await get_streamer_url(self.name_)):
+            print(self.name_, "is not online")
             return self.return_dat()
         
         self.success = response.success
@@ -103,4 +107,5 @@ class CreateStreamer:
             self.path_,
             self.filename,
             self.metadata,
+            self.success
         )

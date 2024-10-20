@@ -137,6 +137,8 @@ async def json_scraping() -> None:
     try:    
         [await process_urls(url_batch, i) for i, url_batch in enumerate(max_urls)]
     except Exception as e:
+        for i,url_batch in enumerate(max_urls):
+            print(i,len(url_batch))
         print("list comprehension error, process_urls and i iterator")
         print(e)
 

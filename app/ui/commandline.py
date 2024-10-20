@@ -24,9 +24,6 @@ class Cli(Cmd):
 
         if None in (streamer_data := CreateStreamer(data).return_data):
             return None
-        
-        if not None in db_add_streamer(streamer_data.name_):
-            return None
 
         # CaptureStreamer(streamer_data)
 

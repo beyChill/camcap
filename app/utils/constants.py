@@ -18,6 +18,7 @@ class StreamerData(NamedTuple):
     path_: Path
     file: str
     metadata: list
+    success:bool
 
 class DbAddStreamer(NamedTuple):
     write:bool

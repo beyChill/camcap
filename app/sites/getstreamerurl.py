@@ -31,12 +31,14 @@ async def get_streamer_url(name_: str):
             timeout=15,
         )
         if response.status_code != 200:
+            print(response.status_code)
             print(
                 "code:", response.status_code, "- try streamer capture at a later time"
             )
             return GetStreamerUrl(None, None, None)
 
         data = response.json()
+
         url = data["url"]
         if not bool(data["url"]):
             url = None
