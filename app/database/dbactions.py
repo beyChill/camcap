@@ -9,7 +9,7 @@ from datetime import date, datetime
 from termcolor import colored
 from calendar import timegm
 from app.config.settings import get_settings
-from app.utils.constants import DbAddStreamer
+from app.utils.constants import DbAddStreamer, StreamerWithPid
 
 
 log = getLogger(__name__)
@@ -51,6 +51,20 @@ def db_init() -> None:
 # * WRITE
 # ***********************************
 
+def db_update_pid(arg: StreamerWithPid):
+    sql = "Update models SET pid=?, last_capture=? WHERE model_name=?"
+    args = (arg.pid, datetime.now().replace(microseconds=0), arg.model_name)
+    if not _write_to_db(sql, args):
+        log.error("Data write failed: %s ", (colored(f"{arg.model_name}", "red")))
+        return
+    log.info("capturing %s", (colored(arg.model_name, "green")))
+
+
+def db_remove_pid(pid):
+    sql = "UPDATE models SET pid=? WHERE pid=?"
+    arg = (None, pid)
+    if not _write_to_db(sql, arg):
+        log.error(colored("Unable to reset the pid for the model", "red"))
 
 def db_add_streamer(name_: str) -> tuple:
     today = datetime.now().replace(microsecond=0)

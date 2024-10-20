@@ -1,4 +1,6 @@
+from logging import INFO
 from pathlib import Path
+from xmlrpc.client import _datetime
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -18,6 +20,8 @@ class Settings(BaseSettings):
     CAPTURE_LENGTH: str = f"{video_length_seconds}"
     log_level: str = "DEBUG"
     default_cli_prompt: str = "$"
+    log_level=INFO
+    datetime=_datetime.now().replace(microseconds=0)
 
 
 @lru_cache()

@@ -2,10 +2,7 @@ import asyncio
 from dataclasses import InitVar, dataclass, field
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any
 from app.config.settings import get_settings
-
-# from app.database.dbactions import db_add_streamer
 from app.database.dbactions import db_add_streamer
 from app.sites.getstreamerurl import get_streamer_url
 from app.utils.constants import StreamerData, Streamer

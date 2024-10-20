@@ -30,6 +30,11 @@ class GetStreamerUrl(NamedTuple):
     url:str
     room_status:str
 
+class StreamerWithPid(NamedTuple):
+    pid: int
+    model_name: str
+    site_name: str
+
 VALIDSITES = {"cb", "mfc", "sc"}
 
 SITENAME = {
