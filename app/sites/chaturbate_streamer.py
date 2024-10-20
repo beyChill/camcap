@@ -50,24 +50,23 @@ class CreateStreamer:
         asyncio.run(self.get_url())
 
         if not bool(self.success):
-            try:
-                self.return_data = self.return_dat()
-                return self.return_data
-            finally:
-                del self
-                
+            print(self.name_, f"is not a {self.site_name} streamer")
+            return self.return_dat()
+
         db_add_streamer(self.name_)
+
+        if not bool(self.url):
+            print(self.name_, f"is {self.room_status}")
 
         self.path_ = self.file_svs.set_video_path(self.name_, self.site_name)
         self.filename = self.file_svs.set_filename(self.name_, self.site_slug)
         self.metadata = self.set_metadata(self.name_, self.site_name)
-        self.return_data = self.return_dat()
+        self.return_dat()
 
         del self
 
     async def get_url(self):
         if None in (response := await get_streamer_url(self.name_)):
-            print(self.name_, "is not online")
             return self.return_dat()
         
         self.success = response.success
@@ -100,7 +99,7 @@ class CreateStreamer:
         return metadata
 
     def return_dat(self) -> StreamerData:
-        return StreamerData(
+        self.return_data=StreamerData(
             self.name_,
             self.site_name,
             self.url,
