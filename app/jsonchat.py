@@ -79,7 +79,7 @@ async def json_scraping() -> None:
             "Sec-Fetch-Site": "cross-site",
         }
 
-        response = await client.get(url, headers=headers, timeout=25)
+        response = await client.get(url, headers=headers, timeout=35)
 
         if response.status_code != 200:
             print("code:", response.status_code)
@@ -99,7 +99,7 @@ async def json_scraping() -> None:
 
         return data_columns
 
-    async def process_urls(urls: list[str], i: int) -> None:
+    async def process_urls(i: int, urls: list[str]) -> None:
         async with AsyncClient(headers=HEADERS_IMG, http2=True) as client:
             stat = []
 
@@ -134,11 +134,11 @@ async def json_scraping() -> None:
         page_urls[x : x + rate_limit] for x in range(0, len(page_urls), rate_limit)
     ]
 
-    try:    
-        [await process_urls(url_batch, i) for i, url_batch in enumerate(max_urls)]
+    try:
+        [await process_urls(i, url_batch) for i, url_batch in enumerate(max_urls)]
     except Exception as e:
-        for i,url_batch in enumerate(max_urls):
-            print(i,len(url_batch))
+        for i, url_batch in enumerate(max_urls):
+            print(i, len(url_batch))
         print("list comprehension error, process_urls and i iterator")
         print(e)
 
