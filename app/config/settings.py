@@ -1,9 +1,9 @@
 from logging import INFO
 from pathlib import Path
-from xmlrpc.client import _datetime
+from typing import ClassVar, Literal
 from pydantic_settings import BaseSettings
 from functools import lru_cache
-
+from datetime import datetime
 
 class Settings(BaseSettings):
     db_name: str = "capcam.sqlite3"
@@ -20,8 +20,8 @@ class Settings(BaseSettings):
     CAPTURE_LENGTH: str = f"{video_length_seconds}"
     log_level: str = "DEBUG"
     default_cli_prompt: str = "$"
-    log_level=INFO
-    datetime=_datetime.now().replace(microseconds=0)
+    log_level:Literal[20]=INFO
+    datetime:ClassVar=datetime.now().replace(microsecond=0)
 
 
 @lru_cache()

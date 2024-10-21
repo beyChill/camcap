@@ -7,6 +7,6 @@ from app.ui.commandline import Cli
 if __name__ == "__main__":
     setup_logging()
     db_init()
-    run_query_json()
+    # run_query_json()
 
     Cli().cmdloop()

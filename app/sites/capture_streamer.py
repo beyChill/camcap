@@ -4,15 +4,16 @@ from io import TextIOWrapper
 from logging import DEBUG, getLogger
 from pathlib import Path
 from subprocess import DEVNULL, Popen
+import subprocess
 from threading import Thread
 import time
 
 from termcolor import colored
 
 from app.config.settings import get_settings
-from app.database.dbactions import db_cap_status, db_remove_pid, db_update_pid
+from app.database.dbactions import db_remove_pid, db_update_pid, query_db
 from app.errors.capture_errors import CaptureError
-from app.sites.chaturbate_streamer import CreateStreamer
+from app.sites.create_streamer import CreateStreamer
 from app.utils.constants import StreamerData, StreamerWithPid
 
 log = getLogger(__name__)
@@ -29,18 +30,18 @@ class CaptureStreamer:
     name_: str = field(init=False)
     site: str = field(init=False)
     url: str = field(init=False)
-    args_gpu: list = field(default_factory=list)
+    args_ffmpeg: list = field(default_factory=list)
     pid: int = field(default=0,init=False )
     capturetime:int=field(default=1200,init=False)
     process: Popen[bytes] = field(init=False)
 
     def __post_init__(self):
         self.metadata = self.data.metadata
-        self.path_ = self.data.path_
+        self.path_ = self.data.path_.mkdir(parents=True, exist_ok=True)
         self.name_ = self.data.name_
         self.site = self.data.site
         self.url = self.data.url
-        self.file=self.data.file
+        self.file= Path(self.data.path_, self.data.file).joinpath()
         self.capturetime=get_settings().CAPTURE_LENGTH
         self.args_ffmpeg = self.ffmpeg_args()
         if self.url:
@@ -72,11 +73,6 @@ class CaptureStreamer:
             return DEVNULL
         return open(f"{self.path_}/stdout.log", "w+", encoding="utf-8")
 
-    def std_err(self) -> int | TextIOWrapper:
-        if cli_logging != DEBUG:
-            return DEVNULL
-        return open(f"{self.path_}/stderr.log", "w+", encoding="utf-8")
-
     def subprocess_status(self, db_model: StreamerWithPid, process: Popen):
         pid, name_, site = db_model
         try:
@@ -84,26 +80,29 @@ class CaptureStreamer:
                 if process.poll() is not None:
                     db_remove_pid(pid)
                     now = datetime.now().strftime("%b-%d %H:%M")
-                    # print(self.name_)
                     err=f"{now} - {colored(name_, "yellow")} - {site} stopped"
                     del self
                     raise CaptureError(err)
-                    # break
         except CaptureError as e:
             log.info(e.msg)
+            pass
         finally:
-            time.sleep(11)
-            follow, block =db_cap_status(name_)
-            if follow is not None and block is None:
+            time.sleep(9)
+            follow, block =query_db("cap_status",name_)
+
+            if bool(follow) and not bool(block):
                 data=(name_,'cb','Chaturbate')
-                CreateStreamer(data)
+            if None in (streamer_data := CreateStreamer(data).return_data):
+                return None
+
+            CaptureStreamer(streamer_data)
 
     def activate(self):
         process = Popen(
-            self.args_gpu,
+            self.args_ffmpeg,
             stdin=DEVNULL,
             stdout=self.std_out(),
-            stderr=self.std_err(),
+            stderr=subprocess.STDOUT,
             start_new_session=True,
         )
         pid = process.pid

@@ -1,6 +1,7 @@
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from logging import getLogger
+import os
 import sqlite3
 from typing import Any, Dict
 from datetime import datetime
@@ -126,9 +127,16 @@ def db_update_streamers(values: list):
 # ************************************
 
 
-def _db_cap_status(name_):
+def _cap_status(name_):
     return (
         "SELECT follow, block_date FROM chaturbate WHERE streamer_name=?",
+        (name_,),
+    )
+
+
+def _get_pid(name_):
+    return (
+        "SELECT streamer_name, pid FROM chaturbate WHERE streamer_name=?",
         (name_,),
     )
 
@@ -138,10 +146,12 @@ def fetchone(cursor) -> sqlite3.Cursor:
 
 
 QUERY_DICT: Dict[str, Callable] = {
-    "cap_status": _db_cap_status,
+    "chk_pid": _get_pid,
+    "cap_status": _cap_status,
 }
 
 CURSOR_DICT: Dict[str, Callable] = {
+    "chk_pid": fetchone,
     "cap_status": fetchone,
 }
 
@@ -164,3 +174,23 @@ def query_db(action: str, *args):
         log.error(error)
         return None
     return data
+
+
+# ***********************************
+# * general
+# ***********************************
+
+
+def check_pid() -> None:
+    """Delete inactive pids"""
+    models_with_subprocess = query_db("chk_pid")
+
+    log.info(colored("Validating previous capture activity", "cyan"))
+    for name_, pid in models_with_subprocess:
+
+        if pid is not None:
+            try:
+                os.kill(pid, 0)
+            except OSError:
+                # remove_pid(pid)
+                log.debug("Clearing false status for %s", name_)

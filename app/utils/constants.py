@@ -32,7 +32,7 @@ class GetStreamerUrl(NamedTuple):
 
 class StreamerWithPid(NamedTuple):
     pid: int
-    model_name: str
+    streamer_name: str
     site_name: str
 
 VALIDSITES = {"cb", "mfc", "sc"}
