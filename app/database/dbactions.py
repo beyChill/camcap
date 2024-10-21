@@ -156,18 +156,26 @@ def _get_pid(name_):
         (name_,),
     )
 
+def _get_all_pid():
+    sql = "SELECT pid FROM chaturbate WHERE pid IS NOT NULL"
+    return sql
+
 
 def fetchone(cursor) -> sqlite3.Cursor:
     return cursor.fetchone()
 
+def fetchall(cursor) -> sqlite3.Cursor:
+    return cursor.fetchall()
 
 QUERY_DICT: Dict[str, Callable] = {
     "chk_pid": _get_pid,
+    "all_pid":_get_all_pid,
     "cap_status": _cap_status,
 }
 
 CURSOR_DICT: Dict[str, Callable] = {
     "chk_pid": fetchone,
+    "all_pid":fetchall,
     "cap_status": fetchone,
 }
 
@@ -209,4 +217,4 @@ def check_pid() -> None:
                 os.kill(pid, 0)
             except OSError:
                 # remove_pid(pid)
-                log.debug("Clearing false status for %s", name_)
+                log.debug("Clearing inactive status for %s", name_)

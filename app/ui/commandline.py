@@ -13,6 +13,7 @@ from app.config.settings import get_settings
 from app.database.dbactions import (
     block_capture,
     db_add_streamer,
+    db_remove_pid,
     query_db,
     stop_capturing,
 )
@@ -55,8 +56,7 @@ class Cli(Cmd):
         return None
 
     def do_block(self, line: str) -> None:
-
-        name,*rest = CliValidations().input(line)
+        name_, *rest = CliValidations().input(line)
         block_data = (name_, *rest)
 
         block_capture(block_data)
@@ -76,6 +76,20 @@ class Cli(Cmd):
         stop_capturing(name_)
 
     def do_quit(self, _):
+        pid = query_db("all_pid")
+
+        if len(pid) == 0:
+            return None
+
+        for id in pid[0]:
+            if id < 1000:
+                continue
+            try:
+                db_remove_pid(id)
+                os.kill(id, SIGTERM)
+
+            except Exception as e:
+                print(e)
         sys.exit()
 
     def do_exit(self, _) -> None:
