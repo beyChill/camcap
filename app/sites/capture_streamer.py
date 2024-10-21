@@ -14,7 +14,7 @@ from app.config.settings import get_settings
 from app.database.dbactions import db_remove_pid, db_update_pid, query_db
 from app.errors.capture_errors import CaptureError
 from app.sites.create_streamer import CreateStreamer
-from app.utils.constants import StreamerData, StreamerWithPid
+from app.utils.constants import Streamer, StreamerData, StreamerWithPid
 
 log = getLogger(__name__)
 
@@ -90,8 +90,10 @@ class CaptureStreamer:
             time.sleep(9)
             follow, block =query_db("cap_status",name_)
 
-            if bool(follow) and not bool(block):
-                data=(name_,'cb','Chaturbate')
+            if not bool(follow) or bool(block):
+                return None
+            
+            data = Streamer(name_, "cb", "Chaturbate")
             if None in (streamer_data := CreateStreamer(data).return_data):
                 return None
 

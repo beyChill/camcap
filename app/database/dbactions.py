@@ -91,6 +91,13 @@ def num_online(data: int):
     return bool(write)
 
 
+def stop_capturing(name_):
+    sql = "UPDATE chaturbate SET follow=?, pid=? WHERE streamer_name=?"
+    args = (None, None, name_)
+    if not _write_to_db(sql, args):
+        log.error(colored(f"Unable to stop capture for {name_}", "red"))
+
+
 def _write_to_db(sql, arg) -> bool:
     try:
         with connect() as cursor:

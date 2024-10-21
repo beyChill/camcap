@@ -10,7 +10,6 @@ from collections.abc import Callable
 
 config = get_settings()
 
-
 @dataclass(slots=True)
 class FileSvs:
 
@@ -39,7 +38,7 @@ class CreateStreamer:
     success: bool = field(default=None, init=False)
     room_status: str = field(default=None, init=False)
 
-    def __post_init__(self, streamer_data: Streamer, filesvs=lambda: FileSvs()):
+    def __post_init__(self, streamer_data: Streamer, filesvs=lambda: FileSvs()) -> StreamerData | None:
         self.name_, self.site_slug, self.site_name = streamer_data
 
         self.file_svs = filesvs()
@@ -63,9 +62,7 @@ class CreateStreamer:
         del self
 
     async def get_url(self):
-        if None in (response := await get_streamer_url(self.name_)):
-            return self.return_dat()
-        
+        response = await get_streamer_url(self.name_)
         self.success = response.success
         self.url = response.url
         self.room_status = response.room_status
