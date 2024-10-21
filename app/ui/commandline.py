@@ -10,7 +10,12 @@ from termcolor import colored
 from app.config.settings import get_settings
 
 
-from app.database.dbactions import db_add_streamer, query_db, stop_capturing
+from app.database.dbactions import (
+    block_capture,
+    db_add_streamer,
+    query_db,
+    stop_capturing,
+)
 from app.errors.uivalidations import CliError, CliValidations
 from app.sites.capture_streamer import CaptureStreamer
 from app.sites.create_streamer import CreateStreamer
@@ -29,7 +34,7 @@ class Cli(Cmd):
         if None in (data := CliValidations().check_input(line, self.user_prompt)):
             return None
 
-        if not None in (pid := query_db("chk_pid",data.name_)):
+        if not None in (pid := query_db("chk_pid", data.name_)):
             return None
 
         if None in (streamer_data := CreateStreamer(data).return_data):
@@ -48,20 +53,26 @@ class Cli(Cmd):
             print(e.message)
 
         return None
-    
 
-    def do_stop(self,line):
+    def do_block(self, line: str) -> None:
+
+        name,*rest = CliValidations().input(line)
+        block_data = (name_, *rest)
+
+        block_capture(block_data)
+
+    def do_stop(self, line):
         if None in (data := CliValidations().check_input(line, self.user_prompt)):
             return None
 
-        if None in (pid := query_db("chk_pid",data.name_)):
+        if None in (pid := query_db("chk_pid", data.name_)):
             return None
 
-        name_,pid = pid
+        name_, pid = pid
         try:
-            os.kill(pid,SIGTERM)
+            os.kill(pid, SIGTERM)
         except OSError as error:
-                log.error(error)
+            log.error(error)
         stop_capturing(name_)
 
     def do_quit(self, _):

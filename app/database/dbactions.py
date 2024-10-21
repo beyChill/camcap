@@ -4,7 +4,7 @@ from logging import getLogger
 import os
 import sqlite3
 from typing import Any, Dict
-from datetime import datetime
+from datetime import date, datetime
 from termcolor import colored
 from app.config.settings import get_settings
 from app.utils.constants import DbAddStreamer, StreamerWithPid
@@ -96,6 +96,15 @@ def stop_capturing(name_):
     args = (None, None, name_)
     if not _write_to_db(sql, args):
         log.error(colored(f"Unable to stop capture for {name_}", "red"))
+
+def block_capture(data):
+    name_, *reason = data
+    reason = " ".join(reason)
+
+    sql = "UPDATE chaturbate SET block_date=?, follow=?, notes=? WHERE streamer_name=?"
+    arg = (date.today(), None, reason, name_)
+    if not _write_to_db(sql, arg):
+        log.error(colored("Block command failed", "red"))
 
 
 def _write_to_db(sql, arg) -> bool:

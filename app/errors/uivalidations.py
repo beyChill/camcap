@@ -32,6 +32,7 @@ class CliValidations:
         err = f"Command missing {colored('model name','red')} and {colored('site abbreviation','red')}"
         if not bool(line.split()):
             raise CliError(err)
+        return line.split()
 
     @classmethod
     def name_chars(cls, name_: str) -> None:
@@ -89,8 +90,8 @@ class CliValidations:
 
     def check_input(self, line: str, prompt) -> Streamer:
         try:
-            self.input(line)
-            name_, *rest = line.split()
+            
+            name_, *rest = self.input(line)
 
             self.name_chars(name_)
             self.has_cam_site(prompt, rest)
