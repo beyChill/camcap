@@ -34,6 +34,7 @@ async def json_scraping() -> None:
         "sec-fetch-mode": "no-cors",
         "sec-fetch-site": "cross-site",
     }
+
     async with httpx.AsyncClient(headers=HEADERS_IMG, http2=True) as client:
         response = await client.get(
             "https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset=0",

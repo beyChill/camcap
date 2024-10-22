@@ -87,8 +87,9 @@ class Cli(Cmd):
             try:
                 db_remove_pid(id)
                 os.kill(id, SIGTERM)
-
-            except Exception as e:
+            except OSError as e:
+                if e.errno == 3:
+                    continue
                 print(e)
         sys.exit()
 
