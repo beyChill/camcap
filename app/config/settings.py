@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     VIDEO_DIR: Path = Path(parent_dir, v_download_folder)
     video_length_seconds: int = 1800
     CAPTURE_LENGTH: str = f"{video_length_seconds}"
-    log_level: str = "DEBUG"
     default_cli_prompt: str = "$"
     log_level:Literal[20]=INFO
     datetime:ClassVar=datetime.now().replace(microsecond=0)
