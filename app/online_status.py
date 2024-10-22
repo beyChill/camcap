@@ -104,7 +104,7 @@ async def query_online():
         await asyncio.sleep(300.05)
 
 
-if __name__ != "__main__":
+def run_online_status():
     loop = asyncio.new_event_loop()
     loop.create_task(query_online())
     loop.run_forever()
