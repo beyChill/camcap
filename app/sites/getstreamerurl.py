@@ -31,11 +31,12 @@ async def get_streamer_url(name_: str):
             timeout=15,
         )
         if response.status_code != 200:
-            print(response.status_code)
             print(
-                "code:", response.status_code, "- try streamer capture at a later time"
+                "code:",
+                response.status_code,
+                "- too many request, try streamer capture at a later time",
             )
-            return GetStreamerUrl(None, None, None)
+            return GetStreamerUrl(None, None, None, response.status_code)
 
         data = response.json()
 
@@ -43,4 +44,6 @@ async def get_streamer_url(name_: str):
         if not bool(data["url"]):
             url = None
 
-        return GetStreamerUrl(data["success"], url, data["room_status"])
+        return GetStreamerUrl(
+            data["success"], url, data["room_status"], response.status_code
+        )
