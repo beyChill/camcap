@@ -76,21 +76,24 @@ class Cli(Cmd):
         stop_capturing(name_)
 
     def do_quit(self, _):
-        pid = query_db("all_pid")
+        pids = query_db("all_pid")
 
-        if len(pid) == 0:
+        #parmeters for sql
+        values:list = [(None, pid) for pid, in pids]
+
+        # conversion for kill process
+        ids:list = [pid[0] for pid in pids]
+
+        if len(pids) == 0:
             return None
 
-        for id in pid[0]:
-            if id < 1000:
-                continue
-            try:
-                db_remove_pid(id)
-                os.kill(id, SIGTERM)
-            except OSError as e:
-                if e.errno == 3:
-                    continue
-                print(e)
+        db_remove_pid(values)
+        try:
+            [os.kill(id, SIGTERM) for id in ids]
+        except OSError as e:
+            if e.errno == 3:
+                pass
+
         sys.exit()
 
     def do_exit(self, _) -> None:
