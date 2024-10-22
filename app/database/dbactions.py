@@ -4,7 +4,7 @@ from logging import getLogger
 import os
 import sqlite3
 from typing import Any, Dict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from termcolor import colored
 from app.config.settings import get_settings
 from app.utils.constants import DbAddStreamer, StreamerWithPid
@@ -149,7 +149,6 @@ def _cap_status(name_):
         (name_,),
     )
 
-
 def _get_pid(name_):
     return (
         "SELECT streamer_name, pid FROM chaturbate WHERE streamer_name=?",
@@ -160,6 +159,12 @@ def _get_all_pid():
     sql = "SELECT pid FROM chaturbate WHERE pid IS NOT NULL"
     return sql
 
+def _online_status():
+    arg = date.today() - timedelta(days=10000)
+    return (
+        "SELECT streamer_name, followers FROM chaturbate WHERE (last_broadcast>? or last_broadcast IS NULL) AND follow IS NOT NULL AND pid IS NULL AND block_date IS NULL ORDER BY RANDOM() LIMIT 3",
+        (arg,),
+    )
 
 def fetchone(cursor) -> sqlite3.Cursor:
     return cursor.fetchone()
@@ -171,12 +176,14 @@ QUERY_DICT: Dict[str, Callable] = {
     "chk_pid": _get_pid,
     "all_pid":_get_all_pid,
     "cap_status": _cap_status,
+    "online_status":_online_status,
 }
 
 CURSOR_DICT: Dict[str, Callable] = {
     "chk_pid": fetchone,
     "all_pid":fetchall,
     "cap_status": fetchone,
+    "online_status":fetchall,
 }
 
 
