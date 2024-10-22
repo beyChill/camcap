@@ -1,15 +1,13 @@
 from datetime import datetime
 from pathlib import Path
-import sys
-from typing import NamedTuple
-
-from app.config.settings import get_settings
+from typing import NamedTuple, Optional
 
 
 class Streamer(NamedTuple):
     name_: str
     site_slug: str
     site: str
+
 
 class StreamerData(NamedTuple):
     name_: str
@@ -18,22 +16,27 @@ class StreamerData(NamedTuple):
     path_: Path
     file: str
     metadata: list
-    success:bool
+    success: bool
+
 
 class DbAddStreamer(NamedTuple):
-    write:bool
-    follow:datetime
+    write: bool
+    follow: datetime
     block: datetime
 
+
 class GetStreamerUrl(NamedTuple):
-    success:str
-    url:str
-    room_status:str
+    success: str
+    url: str
+    room_status: str
+    status_code: Optional[int] = 0
+
 
 class StreamerWithPid(NamedTuple):
     pid: int
     streamer_name: str
     site_name: str
+
 
 VALIDSITES = {"cb", "mfc", "sc"}
 
