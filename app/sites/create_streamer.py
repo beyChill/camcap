@@ -37,6 +37,7 @@ class CreateStreamer:
     return_data: StreamerData = field(default=None, init=False)
     success: bool = field(default=None, init=False)
     room_status: str = field(default=None, init=False)
+    status_code:int =field(default=None,init=False)
 
     def __post_init__(self, streamer_data: Streamer, filesvs=lambda: FileSvs()) -> StreamerData | None:
         self.name_, self.site_slug, self.site_name = streamer_data
@@ -45,13 +46,13 @@ class CreateStreamer:
 
         asyncio.run(self.get_url())
 
-        if not bool(self.success):
+        if not bool(self.success) and self.status_code !=429:
             print(self.name_, f"is not a {self.site_name} streamer")
             return self.return_dat()
 
         db_add_streamer(self.name_)
 
-        if not bool(self.url):
+        if not bool(self.url) and self.status_code ==200:
             print(self.name_, f"is {self.room_status}")
 
         self.path_ = self.file_svs.set_video_path(self.name_, self.site_name)
@@ -66,6 +67,7 @@ class CreateStreamer:
         self.success = response.success
         self.url = response.url
         self.room_status = response.room_status
+        self.status_code=response.status_code
 
     def set_metadata(self, name_, site) -> list:
         metadata = []
