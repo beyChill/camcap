@@ -34,7 +34,6 @@ async def json_scraping() -> None:
         "sec-fetch-mode": "no-cors",
         "sec-fetch-site": "cross-site",
     }
-
     async with httpx.AsyncClient(headers=HEADERS_IMG, http2=True) as client:
         response = await client.get(
             "https://chaturbate.com/api/ts/roomlist/room-list/?genders=f&limit=90&offset=0",
@@ -154,20 +153,16 @@ async def query_streamers():
         start = perf_counter()
         await json_scraping()
         # convert to log events
-        print("\t", "Processed urls in:", perf_counter() - start, "seconds")
+        print("\t", "Processed urls in:", round((perf_counter() - start), 3), "seconds")
         print("\t", strftime("%H:%M:%S"), "- Json query completed:")
 
         # Delay allows api rest between queries
         await asyncio.sleep(randint(240, 300))
 
 
-def start() -> None:
+def run_query_json() -> None:
     loop = asyncio.new_event_loop()
     loop.set_exception_handler(exception_handler)
     loop.create_task(query_streamers())
     loop.run_forever()
 
-
-def run_query_json() -> None:
-    thread = Thread(target=start, daemon=True)
-    thread.start()
