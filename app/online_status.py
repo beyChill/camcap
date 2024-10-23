@@ -2,13 +2,30 @@ import asyncio
 from datetime import datetime
 from logging import getLogger
 from random import choice, uniform
-from time import perf_counter
+from threading import Thread
+from time import perf_counter, strftime
 from httpx import AsyncClient
 from tabulate import tabulate
+from termcolor import colored
 from app.database.dbactions import query_db
-from app.utils.constants import HEADERS_IMG, USERAGENTS
+from app.sites.capture_streamer import CaptureStreamer
+from app.sites.create_streamer import CreateStreamer
+from app.utils.constants import HEADERS_IMG, USERAGENTS, Streamer
 
 log = getLogger(__name__)
+
+
+def make_streamer(data):
+    if None in (streamer_data := CreateStreamer(data).return_data):
+        return None
+
+    CaptureStreamer(streamer_data)
+
+
+def start_cap(streamer_init):
+    for data in streamer_init:
+        make_streamer(data)
+
 
 async def get_data(
     client: AsyncClient, url: str, name_: str, followers: int
@@ -39,6 +56,7 @@ async def get_online_streamers():
     online = []
     not_online = []
     url_responses_count = 0
+
     # Using 90 to match site queries per page.
     # CDN can handle much more but caution is best approach.
     urls_per_batch = 90
@@ -75,19 +93,31 @@ async def get_online_streamers():
             if status_code >= 201:
                 not_online.append((name_, followers))
 
-    # CLI formatting
+    # CLI table formatting
     head = ["Name", "followers"]
 
     if len(online) > 0:
         online.sort(key=lambda tup: tup[1], reverse=True)
         print(tabulate(online, headers=head, tablefmt="pretty"))
 
-    for streamer_name, *_ in online:
-        is_valid = (streamer_name, "CB", "Chaturbate")
-        # get_capture(is_valid)
+    streamer_init = [
+        Streamer(streamer_name, "CB", "Chaturbate") for streamer_name, *_ in online
+    ]
 
     print(f"Following {url_responses_count} streamers")
-    print(f"Streamers online: {len(online)}")
+    print(f"Starting capture for {len(online)} streamers")
+
+    # CreateStreamer class (create_streamer.py) uses asyncio.run
+    # calling with a seperate class to avoid async loop errors
+    if len(streamer_init) > 0:
+        thread = Thread(
+            target=start_cap,
+            args=(streamer_init,),
+            daemon=True,
+        )
+        thread.start()
+        thread.join()
+
     await asyncio.sleep(0.03)
 
     return True
@@ -99,9 +129,8 @@ async def query_online():
         result = await get_online_streamers()
         if not bool(result):
             break
-        print("Query processing time:", round((perf_counter() - start), 4))
-        print(datetime.now())
-        await asyncio.sleep(300.05)
+        log.info(f"{strftime("%H:%M:%S")}: Online status completed in {colored(round((perf_counter() - start), 4),"green")} seconds")
+        await asyncio.sleep(uniform(290.05,345.7))
 
 
 def run_online_status():
