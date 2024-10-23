@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from logging import getLogger
 import os
 import sqlite3
+from time import strftime
 from typing import Any, Dict
 from datetime import date, datetime, timedelta
 from termcolor import colored
@@ -56,7 +57,7 @@ def db_update_pid(arg: StreamerWithPid):
     if not _write_to_db(sql, args):
         log.error("Data write failed: %s ", (colored(f"{arg.streamer_name}", "red")))
         return
-    log.info("capturing %s", (colored(arg.streamer_name, "green")))
+    log.info(strftime("%H:%M:%S") + f" capturing {colored(arg.streamer_name, "green")}")
 
 
 def db_remove_pid(values: list[tuple[None, int]]):
@@ -176,7 +177,12 @@ def _get_all_pid():
 def _online_status():
     arg = date.today() - timedelta(days=10000)
     return (
-        "SELECT streamer_name, followers FROM chaturbate WHERE (last_broadcast>? or last_broadcast IS NULL) AND follow IS NOT NULL AND pid IS NULL AND block_date IS NULL ORDER BY RANDOM() LIMIT 3",
+        """SELECT streamer_name, followers 
+        FROM chaturbate 
+        WHERE (last_broadcast>? or last_broadcast IS NULL) 
+        AND follow IS NOT NULL AND pid IS NULL 
+        AND block_date IS NULL ORDER BY RANDOM() 
+        LIMIT 7""",
         (arg,),
     )
 
