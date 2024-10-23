@@ -75,10 +75,13 @@ class CaptureStreamer:
 
     def subprocess_status(self, db_model: StreamerWithPid, process: Popen):
         pid, name_, site = db_model
+        pid_list=[]
+        pid_list.append((None,pid))
+
         try:
             while True:
                 if process.poll() is not None:
-                    db_remove_pid(pid)
+                    db_remove_pid(pid_list)
                     now = datetime.now().strftime("%b-%d %H:%M")
                     err=f"{now} - {colored(name_, "yellow")} - {site} stopped"
                     del self
@@ -111,7 +114,9 @@ class CaptureStreamer:
         db_model = StreamerWithPid(pid, self.name_, self.site)
         db_update_pid(db_model)
         thread = Thread(
-            target=self.subprocess_status, args=(db_model, process), daemon=True
+            target=self.subprocess_status, 
+            args=(db_model, process), 
+            daemon=True
         )
         thread.start()
         del self

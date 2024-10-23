@@ -10,6 +10,8 @@ from httpx import AsyncClient
 from random import randint, choice, shuffle
 from string import ascii_lowercase
 
+from termcolor import colored
+
 from app.database.dbactions import num_online, db_update_streamers
 from app.utils.constants import HEADERS_IMG, USERAGENTS
 
@@ -42,7 +44,7 @@ async def json_scraping() -> None:
 
     streamers_online: int = response.json()["total_count"]
     num_online(streamers_online)
-    print(strftime("%H:%M:%S"), "- Streamers online:", streamers_online)
+    log.info(f"{strftime("%H:%M:%S")}: Streamers online: {colored(streamers_online,"green")}")
 
     data_frame = pd.json_normalize(response.json(), "rooms")
 
@@ -82,7 +84,8 @@ async def json_scraping() -> None:
         response = await client.get(url, headers=headers, timeout=35)
 
         if response.status_code != 200:
-            print("code:", response.status_code)
+            log.error("code:", response.status_code)
+            await asyncio.sleep(17)
             return [[random_id(10), 0, 0, 971639231]]
 
         # Zero lenght element means url offset doesn't exist
@@ -108,7 +111,7 @@ async def json_scraping() -> None:
             try:
                 data_stats = await asyncio.gather(*stat)
             except Exception as e:
-                print("Error:", e)
+                log.error(e)
 
         # test better solution to remove double nested list
         remove_nest = sum(list(data_stats), [])
@@ -137,24 +140,24 @@ async def json_scraping() -> None:
     try:
         [await process_urls(i, url_batch) for i, url_batch in enumerate(max_urls)]
     except Exception as e:
+        # debugging prints to determine cause for random non-fatal crashes in above list comprehension
+        print("max_urls:", len(max_urls))
         for i, url_batch in enumerate(max_urls):
             print(i, len(url_batch))
-        print("list comprehension error, process_urls and i iterator")
-        print(e)
+        print("list comprehension error:",e)
 
 
 def exception_handler(loop, context) -> None:
-    print(context["exception"])
-    print(context["message"])
+    log.error(context["exception"])
+    log.error(context["message"])
 
 
 async def query_streamers():
     while True:
         start = perf_counter()
         await json_scraping()
-        # convert to log events
-        print("\t", "Processed urls in:", round((perf_counter() - start), 3), "seconds")
-        print("\t", strftime("%H:%M:%S"), "- Json query completed:")
+        
+        log.info(f"{strftime("%H:%M:%S")}: Processed Json urls in: {colored(round((perf_counter() - start), 3),"green")} seconds")
 
         # Delay allows api rest between queries
         await asyncio.sleep(randint(240, 300))
