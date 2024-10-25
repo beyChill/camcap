@@ -1,5 +1,4 @@
 import asyncio
-from datetime import datetime
 from logging import getLogger
 from random import choice, uniform
 from threading import Thread
@@ -50,7 +49,7 @@ async def get_data(
 
 async def get_online_streamers():
     if (offline := query_db("online_status")) == []:
-        print("Zero streamers are desinated for capture.")
+        log.info(colored("Zero streamers are desinated for capture","yellow"))
         return False
 
     online = []
@@ -94,7 +93,7 @@ async def get_online_streamers():
                 not_online.append((name_, followers))
 
     # CLI table formatting
-    head = ["Name", "followers"]
+    head = ["Online", "followers"]
 
     if len(online) > 0:
         online.sort(key=lambda tup: tup[1], reverse=True)
@@ -104,8 +103,10 @@ async def get_online_streamers():
         Streamer(streamer_name, "CB", "Chaturbate") for streamer_name, *_ in online
     ]
 
-    print(f"Following {url_responses_count} streamers")
-    print(f"Starting capture for {len(online)} streamers")
+    log.debug(f"{strftime("%H:%M:%S")}: Following {url_responses_count} streamers")
+
+    if len(online)>0:
+        log.debug(f"{strftime("%H:%M:%S")}: Capturing {colored(len(online),"green")} streamers")
 
     # CreateStreamer class (create_streamer.py) uses asyncio.run
     # calling with a seperate class to avoid async loop errors
@@ -116,7 +117,7 @@ async def get_online_streamers():
             daemon=True,
         )
         thread.start()
-        thread.join()
+        # thread.join()
 
     await asyncio.sleep(0.03)
 
@@ -129,11 +130,14 @@ async def query_online():
         result = await get_online_streamers()
         if not bool(result):
             break
-        log.info(f"{strftime("%H:%M:%S")}: Online status completed in {colored(round((perf_counter() - start), 4),"green")} seconds")
-        await asyncio.sleep(uniform(290.05,345.7))
+        log.info(f"{strftime("%H:%M:%S")}: Finished streamer status checks in {colored(round((perf_counter() - start), 4), "green")} seconds")
+        await asyncio.sleep(uniform(290.05, 345.7))
 
 
 def run_online_status():
-    loop = asyncio.new_event_loop()
+    loop = asyncio.new_event_loop() 
     loop.create_task(query_online())
     loop.run_forever()
+
+if __name__ == "__main__":
+    run_online_status()
