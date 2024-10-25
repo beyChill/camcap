@@ -1,14 +1,21 @@
 import asyncio
 from dataclasses import InitVar, dataclass, field
 from datetime import date, datetime
+from logging import getLogger
 from pathlib import Path
+from time import strftime
+
+from termcolor import colored
 from app.config.settings import get_settings
 from app.database.dbactions import db_add_streamer
 from app.sites.getstreamerurl import get_streamer_url
 from app.utils.constants import StreamerData, Streamer
 from collections.abc import Callable
 
+
+log = getLogger(__name__)
 config = get_settings()
+
 
 @dataclass(slots=True)
 class FileSvs:
@@ -37,23 +44,25 @@ class CreateStreamer:
     return_data: StreamerData = field(default=None, init=False)
     success: bool = field(default=None, init=False)
     room_status: str = field(default=None, init=False)
-    status_code:int =field(default=None,init=False)
+    status_code: int = field(default=None, init=False)
 
-    def __post_init__(self, streamer_data: Streamer, filesvs=lambda: FileSvs()) -> StreamerData | None:
+    def __post_init__(
+        self, streamer_data: Streamer, filesvs=lambda: FileSvs()
+    ) -> StreamerData | None:
         self.name_, self.site_slug, self.site_name = streamer_data
 
         self.file_svs = filesvs()
 
         asyncio.run(self.get_url())
 
-        if not bool(self.success) and self.status_code !=429:
-            print(self.name_, f"is not a {self.site_name} streamer")
+        if not bool(self.success) and self.status_code != 429:
+            log.error(self.name_, f"is not a {self.site_name} streamer")
             return self.return_dat()
 
         db_add_streamer(self.name_)
 
-        if not bool(self.url) and self.status_code ==200:
-            print(self.name_, f"is {self.room_status}")
+        if not bool(self.url) and self.status_code == 200:
+            log.info(colored(f"{strftime("%H:%M:%S")}: {self.name_} is {self.room_status}","yellow"))
 
         self.path_ = self.file_svs.set_video_path(self.name_, self.site_name)
         self.filename = self.file_svs.set_filename(self.name_, self.site_slug)
@@ -67,7 +76,7 @@ class CreateStreamer:
         self.success = response.success
         self.url = response.url
         self.room_status = response.room_status
-        self.status_code=response.status_code
+        self.status_code = response.status_code
 
     def set_metadata(self, name_, site) -> list:
         metadata = []
@@ -95,13 +104,12 @@ class CreateStreamer:
         return metadata
 
     def return_dat(self) -> StreamerData:
-        self.return_data=StreamerData(
+        self.return_data = StreamerData(
             self.name_,
             self.site_name,
             self.url,
             self.path_,
             self.filename,
             self.metadata,
-            self.success
+            self.success,
         )
-

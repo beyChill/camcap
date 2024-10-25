@@ -6,7 +6,7 @@ from pathlib import Path
 from subprocess import DEVNULL, Popen
 import subprocess
 from threading import Thread
-import time
+from time import sleep, strftime
 
 from termcolor import colored
 
@@ -82,15 +82,14 @@ class CaptureStreamer:
             while True:
                 if process.poll() is not None:
                     db_remove_pid(pid_list)
-                    now = datetime.now().strftime("%b-%d %H:%M")
-                    err=f"{now} - {colored(name_, "yellow")} - {site} stopped"
+                    err=f"{strftime("%H:%M:%S")}: {colored(f"{name_} from {site} stopped", "yellow")}"
                     del self
                     raise CaptureError(err)
         except CaptureError as e:
             log.info(e.msg)
             pass
         finally:
-            time.sleep(9)
+            sleep(9)
             follow, block =query_db("cap_status",name_)
 
             if not bool(follow) or bool(block):
@@ -112,7 +111,9 @@ class CaptureStreamer:
         )
         pid = process.pid
         db_model = StreamerWithPid(pid, self.name_, self.site)
+
         db_update_pid(db_model)
+        
         thread = Thread(
             target=self.subprocess_status, 
             args=(db_model, process), 
