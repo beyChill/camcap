@@ -57,7 +57,7 @@ def db_update_pid(arg: StreamerWithPid):
     if not _write_to_db(sql, args):
         log.error("Data write failed: %s ", (colored(f"{arg.streamer_name}", "red")))
         return
-    log.info(strftime("%H:%M:%S") + f" capturing {colored(arg.streamer_name, "green")}")
+    log.info(strftime("%H:%M:%S") + f": Capturing {colored(arg.streamer_name, "green")}")
 
 
 def db_remove_pid(values: list[tuple[None, int]]):
