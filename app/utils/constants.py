@@ -1,5 +1,6 @@
 from datetime import datetime
 from pathlib import Path
+from random import choice
 from typing import NamedTuple, Optional
 
 
@@ -88,18 +89,38 @@ USERAGENTS = (
     "Lupa/6 CFNetwork/1240.0.4 Darwin/20.5.0",
 )
 
-HEADERS = {
-    "authority": "chaturbate.com",
-    "accept": "*/*",
-    "accept-language": "en-US,en;q=0.9",
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "Accept-Encoding": "gzip, compress;q=0.7, identity;q=0.5, *;q=0.3",
+HEADERS_JSON = {
+    "User-agent": choice(USERAGENTS),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8",
+    "Accept-language": "en-US,en;q=0.9",
+    "Accept-encoding": "gzip, deflate, br, zstd",
+    "Sec-fetch-dest": "document",
+    "Sec-fetch-mode": "navigate",
+    "Sec-fetch-site": "cross-site",
+    "Cache-control": "no-cache",
+    "Connection": "keep-alive",
+    "Host": "chaturbate.com",
     "Pragma": "no-cache",
-    "Cache-Control": "no-cache",
-    "x-requested-with": "XMLHttpRequest",
+    "Priority": "u=0,i",
 }
+
+
+HEADERS_STREAM_URL = {
+    "User-agent": choice(USERAGENTS),
+    ":Authority": "chaturbate.com",
+    ":Method": "GET",
+    ":Path": "/api/ts/roomlist/room-list/?genders=f&limit=90&offset=0",
+    ":Scheme": "https",
+    "Accept": "*/*",
+    "Accept-encoding": "gzip, deflate, br",
+    "Accept-language": "en-US,en;q=0.9",
+    "Content-length": "382",
+    "Origin": "https://chaturbate.com",
+    "Sec-fetch-dest": "empty",
+    "Sec-fetch-mode": "cors",
+    "Sec-fetch-site": "same_origin",
+}
+
 
 HEADERS_IMG = {
     "authority": "thumb.live.mmcdn.com",
