@@ -89,6 +89,8 @@ USERAGENTS = (
     "Lupa/6 CFNetwork/1240.0.4 Darwin/20.5.0",
 )
 
+
+
 HEADERS_JSON = {
     "User-agent": choice(USERAGENTS),
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8",
@@ -107,37 +109,36 @@ HEADERS_JSON = {
 
 HEADERS_STREAM_URL = {
     "User-agent": choice(USERAGENTS),
-    ":Authority": "chaturbate.com",
-    ":Method": "GET",
-    ":Path": "/api/ts/roomlist/room-list/?genders=f&limit=90&offset=0",
-    ":Scheme": "https",
+    "Authority": "chaturbate.com",
+    "Scheme": "https",
     "Accept": "*/*",
     "Accept-encoding": "gzip, deflate, br",
     "Accept-language": "en-US,en;q=0.9",
-    "Content-length": "382",
     "Origin": "https://chaturbate.com",
     "Sec-fetch-dest": "empty",
     "Sec-fetch-mode": "cors",
     "Sec-fetch-site": "same_origin",
+    "Pragma": "no-cache",
+    "Cache-Control": "no-cache",
+    "x-requested-with": "XMLHttpRequest",
 }
 
 
 HEADERS_IMG = {
-    "authority": "thumb.live.mmcdn.com",
-    "method": "GET",
+    "User-agent": choice(USERAGENTS),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8",
     "accept-language": "en-US,en;q=0.9",
     "accept-encoding": "gzip, deflate, br",
-    "scheme": "https",
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": "Linux",
-    "sec-fetch-dest": "document",
-    "sec-fetch-mode": "navigate",
-    "sec-fetch-site": "none",
-    "sec-fetch-user": "?1",
-    "upgrade-insecure-requests": "1",
-    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "Pragma": "no-cache",
     "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "DNT":1,
+    "Host":"jpeg.live.mmcdn.com",
+    "Pragma": "no-cache",
+    "Priority": "u=0,i",
+    "Sec-fetch-dest": "document",
+    "Sec-fetch-mode": "navigate",
+    "Sec-fetch-site": "none",
+    "Sec-GPC":1,
 }
 
 referers = (
