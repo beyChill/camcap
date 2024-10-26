@@ -1,4 +1,5 @@
 import asyncio
+from datetime import timedelta
 from logging import getLogger
 import math
 import pandas as pd
@@ -77,7 +78,7 @@ async def process_urls(i: int, urls: list[str]) -> None:
     # error on the side of caution using short delay.
     if i < 1:
         delay_ = randint(110, 150)
-        log.debug(f"{strftime("%H:%M:%S")}: Next streamer query in {delay_} seconds")
+        log.debug(f"{strftime("%H:%M:%S")}: Next streamer query in {str(timedelta(seconds = delay_))}")
         await asyncio.sleep(delay_)
 
     return None
@@ -162,7 +163,7 @@ async def query_streamers():
 
         # Delay allows api rest between queries
         delay_ = randint(240, 300)
-        log.info(f"Restarting site query in {delay_} seconds")
+        log.info(f"Restarting site query in {str(timedelta(seconds = delay_))}")
         await asyncio.sleep(delay_)
 
 
