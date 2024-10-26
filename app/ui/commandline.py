@@ -78,16 +78,17 @@ class Cli(Cmd):
     def do_quit(self, _):
         pids = query_db("all_pid")
 
-        #parmeters for sql
-        values:list = [(None, pid) for pid, in pids]
+        # parmeters for sql
+        values: list = [(None, pid) for pid, in pids]
 
         # conversion for kill process
-        ids:list = [pid[0] for pid in pids]
+        ids: list = [pid[0] for pid in pids]
 
         if len(pids) == 0:
             return None
 
         db_remove_pid(values)
+
         try:
             [os.kill(id, SIGTERM) for id in ids]
         except OSError as e:
