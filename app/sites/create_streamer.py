@@ -56,7 +56,7 @@ class CreateStreamer:
         asyncio.run(self.get_url())
 
         if not bool(self.success) and self.status_code != 429:
-            log.error(self.name_, f"is not a {self.site_name} streamer")
+            log.error(f"{self.name_} is not a {self.site_name} streamer")
             return self.return_dat()
 
         db_add_streamer(self.name_)
