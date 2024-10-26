@@ -171,3 +171,6 @@ def run_query_json() -> None:
     loop.set_exception_handler(exception_handler)
     loop.create_task(query_streamers())
     loop.run_forever()
+
+if __name__ == "__main__":
+    run_query_json()
