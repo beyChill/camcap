@@ -135,7 +135,7 @@ HEADERS_IMG = {
     "Host":"jpeg.live.mmcdn.com",
     "Pragma": "no-cache",
     "Priority": "u=0,i",
-    "Sec-fetch-dest": "document",
+    "Sec-fetch-dest": "image",
     "Sec-fetch-mode": "navigate",
     "Sec-fetch-site": "none",
     "Sec-GPC":1,
