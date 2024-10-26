@@ -13,6 +13,10 @@ block_date      DATETIME DEFAULT NULL,
 notes           VARCHAR(25),
 created_on      DEFAULT (date('now','localtime')),
 model_status    VARCHAR(12),
+recorded        INTEGER DEFAULT NULL,
+review          INTEGER DEFAULT NULL,
+keep_           INTEGER DEFAULT NULL,
+storage         VARCHAR(12),
 PRIMARY KEY (streamer_name)
 );
 
