@@ -1,25 +1,15 @@
+import sys
+import os
 from cmd import Cmd
 from logging import getLogger
-import os
-
 from signal import SIGTERM
-import sys
-
 from termcolor import colored
-
 from app.config.settings import get_settings
-
-
-from app.database.dbactions import (
-    block_capture,
-    db_add_streamer,
-    db_remove_pid,
-    query_db,
-    stop_capturing,
-)
 from app.errors.uivalidations import CliError, CliValidations
 from app.sites.capture_streamer import CaptureStreamer
 from app.sites.create_streamer import CreateStreamer
+import app.database.dbactions as dbase
+
 
 log = getLogger(__name__)
 config = get_settings()
@@ -35,7 +25,7 @@ class Cli(Cmd):
         if None in (data := CliValidations().check_input(line, self.user_prompt)):
             return None
 
-        if not None in (pid := query_db("chk_pid", data.name_)):
+        if not None in (pid := dbase.db_get_pid(data.name_)):
             return None
 
         if None in (streamer_data := CreateStreamer(data).return_data):
@@ -59,13 +49,13 @@ class Cli(Cmd):
         name_, *rest = CliValidations().input(line)
         block_data = (name_, *rest)
 
-        block_capture(block_data)
+        dbase.block_capture(block_data)
 
     def do_stop(self, line):
         if None in (data := CliValidations().check_input(line, self.user_prompt)):
             return None
 
-        if None in (pid := query_db("chk_pid", data.name_)):
+        if None in (pid := dbase.db_get_pid(data.name_)):
             return None
 
         name_, pid = pid
@@ -73,21 +63,21 @@ class Cli(Cmd):
             os.kill(pid, SIGTERM)
         except OSError as error:
             log.error(error)
-        stop_capturing(name_)
+        dbase.stop_capturing(name_)
 
     def do_quit(self, _):
-        pids = query_db("all_pid")
+        pids = dbase.db_all_pids()
 
+        if len(pids) == 0:
+            sys.exit()
+        
         # parmeters for sql
         values: list = [(None, pid) for pid, in pids]
 
-        # conversion for kill process
+        # list of tuple converted for os.kill process
         ids: list = [pid[0] for pid in pids]
 
-        if len(pids) == 0:
-            return None
-
-        db_remove_pid(values)
+        dbase.db_remove_pid(values)
 
         try:
             [os.kill(id, SIGTERM) for id in ids]

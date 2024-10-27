@@ -1,8 +1,8 @@
+import os
+import sqlite3
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from logging import getLogger
-import os
-import sqlite3
 from time import strftime
 from typing import Any, Dict
 from datetime import date, datetime, timedelta
@@ -52,18 +52,19 @@ def db_init() -> None:
 
 
 def db_update_pid(arg: StreamerWithPid):
-    sql = "Update chaturbate SET pid=?, last_capture=?, last_broadcast=? WHERE streamer_name=?"
+    sql = "Update chaturbate SET recorded=recorded+1, pid=?, last_capture=?, last_broadcast=? WHERE streamer_name=?"
     args = (arg.pid, config.datetime, config.datetime, arg.streamer_name)
     if not _write_to_db(sql, args):
         log.error("Data write failed: %s ", (colored(f"{arg.streamer_name}", "red")))
         return
-    log.info(strftime("%H:%M:%S") + f": Capturing {colored(arg.streamer_name, "green")}")
+    log.info(
+        strftime("%H:%M:%S") + f": Capturing {colored(arg.streamer_name, "green")}"
+    )
 
 
 def db_remove_pid(values: list[tuple[None, int]]):
     sql = "UPDATE chaturbate SET pid=? WHERE pid=?"
-    arg = values
-    _db_executemany(sql, arg)
+    _db_executemany(sql, values)
 
 
 def db_add_streamer(name_: str) -> tuple:
@@ -75,7 +76,7 @@ def db_add_streamer(name_: str) -> tuple:
         follow='{today}' WHERE follow IS NULL"""
     args = (name_, today)
     write = _write_to_db(sql, args)
-    query = query_db("cap_status", name_)
+    query = db_cap_status(name_)
 
     if not write:
         log.error("Failed to add: %s", (colored(name_, "red")))
@@ -120,23 +121,16 @@ def _write_to_db(sql, arg) -> bool:
 
 
 def db_update_streamers(values: list):
-    sql = """INSERT INTO chaturbate (streamer_name, followers, viewers, last_broadcast) 
-        VALUES ( ?, ?, ?, ?)
+    sql = """INSERT INTO chaturbate (streamer_name, followers, viewers) 
+        VALUES ( ?, ?, ?)
         ON CONFLICT (streamer_name)
         DO UPDATE SET 
         followers=EXCLUDED.followers,
         viewers=EXCLUDED.viewers, 
-        last_broadcast=DATETIME(EXCLUDED.last_broadcast, 'unixepoch', 'localtime'),
+        last_broadcast=DATETIME('now', 'localtime'),
         most_viewers=MAX(most_viewers, EXCLUDED.viewers)
         """
-    try:
-        with connect() as cursor:
-            write = cursor.executemany(sql, values)
-    except sqlite3.Error as error:
-        log.error(error)
-        write = None
-    finally:
-        return bool(write)
+    _db_executemany(sql, values)
 
 
 def _db_executemany(sql: str, values: list):
@@ -154,39 +148,6 @@ def _db_executemany(sql: str, values: list):
 # * query
 # ************************************
 
-
-def _cap_status(name_):
-    return (
-        "SELECT follow, block_date FROM chaturbate WHERE streamer_name=?",
-        (name_,),
-    )
-
-
-def _get_pid(name_):
-    return (
-        "SELECT streamer_name, pid FROM chaturbate WHERE streamer_name=?",
-        (name_,),
-    )
-
-
-def _get_all_pid():
-    sql = "SELECT pid FROM chaturbate WHERE pid IS NOT NULL"
-    return sql
-
-
-def _online_status():
-    arg = date.today() - timedelta(days=10000)
-    return (
-        """SELECT streamer_name, followers 
-        FROM chaturbate 
-        WHERE (last_broadcast>? or last_broadcast IS NULL) 
-        AND follow IS NOT NULL AND pid IS NULL 
-        AND block_date IS NULL ORDER BY RANDOM() 
-        LIMIT 7""",
-        (arg,),
-    )
-
-
 def fetchone(cursor) -> sqlite3.Cursor:
     return cursor.fetchone()
 
@@ -195,25 +156,12 @@ def fetchall(cursor) -> sqlite3.Cursor:
     return cursor.fetchall()
 
 
-QUERY_DICT: Dict[str, Callable] = {
-    "chk_pid": _get_pid,
-    "all_pid": _get_all_pid,
-    "cap_status": _cap_status,
-    "online_status": _online_status,
+CURSOR_TYPE: Dict[str, Callable] = {
+    "all": fetchall,
+    "one": fetchone,
 }
 
-CURSOR_DICT: Dict[str, Callable] = {
-    "chk_pid": fetchone,
-    "all_pid": fetchall,
-    "cap_status": fetchone,
-    "online_status": fetchall,
-}
-
-
-def query_db(action: str, *args):
-
-    sql = QUERY_DICT[action](*args)
-
+def query_db2(sql: str, action: str = "all"):
     try:
         with connect() as cursor:
             if isinstance(sql, tuple):
@@ -222,14 +170,90 @@ def query_db(action: str, *args):
             if not isinstance(sql, tuple):
                 cursor.execute(sql)
 
-            data = CURSOR_DICT[action](cursor)
+            data = CURSOR_TYPE[action](cursor)
 
     except sqlite3.Error as error:
         log.error(error)
         return None
-    if data is None:
-        data = []
+
     return data
+
+
+def db_cap_status(name_: str):
+    sql = (
+        "SELECT follow, block_date FROM chaturbate WHERE streamer_name=?",
+        (name_,),
+    )
+    result: tuple[str | None, str | None] = query_db2(sql, "one")
+    return result
+
+
+def db_followed():
+    value = date.today() - timedelta(days=10000)
+    sql = (
+        """SELECT streamer_name 
+        FROM chaturbate 
+        WHERE (last_broadcast>? or last_broadcast IS NULL) 
+        AND follow IS NOT NULL AND pid IS NULL 
+        AND block_date IS NULL ORDER BY RANDOM()
+        """,
+        (value,),
+    )
+    result = query_db2(sql)
+    data: list[str] = [f"{streamer_name }" for streamer_name, in result]
+
+    return data
+
+
+def db_recorded(streamers: list):
+    name_ = tuple(streamers)
+    arg = f" IN {name_}"
+    if len(streamers) < 2:
+        arg = f"='{streamers[0]}'"
+
+    sql = f"""
+        SELECT streamer_name, recorded
+        FROM chaturbate
+        WHERE streamer_name{arg}
+        """
+    result: list[tuple[str, int]] = query_db2(sql)
+
+    return result
+
+
+def db_follow_offline(streamers: list):
+    name_ = tuple(streamers)
+    arg = f" IN {name_}"
+    if len(streamers) < 2:
+        arg = f"='{streamers[0]}'"
+
+    sql = f"""
+        SELECT streamer_name, last_broadcast, recorded
+        FROM chaturbate
+        WHERE streamer_name{arg}
+        """
+    result: list[tuple[str, int]] = query_db2(sql)
+
+    return result
+
+
+def db_get_pid(name_: str):
+    sql = (
+        "SELECT streamer_name, pid FROM chaturbate WHERE streamer_name=?",
+        (name_,),
+    )
+
+    result: tuple[str, int | None] = query_db2(sql, "one")
+
+    return result
+
+
+def db_all_pids():
+    sql = "SELECT pid FROM chaturbate WHERE pid IS NOT NULL"
+
+    result: list[tuple[int]] = query_db2(sql)
+
+    return result
 
 
 # ***********************************
@@ -239,7 +263,7 @@ def query_db(action: str, *args):
 
 def check_pid() -> None:
     """Delete inactive pids"""
-    models_with_subprocess = query_db("chk_pid")
+    models_with_subprocess = db_all_pids
 
     log.info(colored("Validating previous capture activity", "cyan"))
     for name_, pid in models_with_subprocess:

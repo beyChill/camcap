@@ -126,19 +126,19 @@ HEADERS_STREAM_URL = {
 
 HEADERS_IMG = {
     "User-agent": choice(USERAGENTS),
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8",
-    "accept-language": "en-US,en;q=0.9",
-    "accept-encoding": "gzip, deflate, br",
-    "Cache-Control": "no-cache",
-    "Connection": "keep-alive",
-    "DNT":1,
-    "Host":"jpeg.live.mmcdn.com",
-    "Pragma": "no-cache",
-    "Priority": "u=0,i",
-    "Sec-fetch-dest": "image",
-    "Sec-fetch-mode": "navigate",
-    "Sec-fetch-site": "none",
-    "Sec-GPC":1,
+    # "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8",
+    # "accept-language": "en-US,en;q=0.9",
+    # "accept-encoding": "gzip, deflate, br, zstd",
+    # "Cache-Control": "no-cache",
+    # "Connection": "keep-alive",
+    # # "DNT":1,
+    # "Host":"jpeg.live.mmcdn.com",
+    # "Pragma": "no-cache",
+    # "Priority": "u=0,i",
+    # "Sec-fetch-dest": "document",
+    # "Sec-fetch-mode": "navigate",
+    # "Sec-fetch-site": "none",
+    # "Sec-GPC":1,
 }
 
 referers = (

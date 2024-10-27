@@ -11,7 +11,7 @@ from time import sleep, strftime
 from termcolor import colored
 
 from app.config.settings import get_settings
-from app.database.dbactions import db_remove_pid, db_update_pid, query_db
+from app.database.dbactions import db_cap_status, db_remove_pid, db_update_pid
 from app.errors.capture_errors import CaptureError
 from app.sites.create_streamer import CreateStreamer
 from app.utils.constants import Streamer, StreamerData, StreamerWithPid
@@ -26,13 +26,13 @@ class CaptureStreamer:
     data: StreamerData
     metadata: list = field(init=False)
     path_: Path = field(init=False)
-    file:Path=field(init=False)
+    file: Path = field(init=False)
     name_: str = field(init=False)
     site: str = field(init=False)
     url: str = field(init=False)
     args_ffmpeg: list = field(default_factory=list)
-    pid: int = field(default=0,init=False )
-    capturetime:int=field(default=1200,init=False)
+    pid: int = field(default=0, init=False)
+    capturetime: int = field(default=1200, init=False)
     process: Popen[bytes] = field(init=False)
 
     def __post_init__(self):
@@ -41,8 +41,8 @@ class CaptureStreamer:
         self.name_ = self.data.name_
         self.site = self.data.site
         self.url = self.data.url
-        self.file= Path(self.data.path_, self.data.file).joinpath()
-        self.capturetime=get_settings().CAPTURE_LENGTH
+        self.file = Path(self.data.path_, self.data.file).joinpath()
+        self.capturetime = get_settings().CAPTURE_LENGTH
         self.args_ffmpeg = self.ffmpeg_args()
         if self.url:
             self.activate()
@@ -75,14 +75,14 @@ class CaptureStreamer:
 
     def subprocess_status(self, db_model: StreamerWithPid, process: Popen):
         pid, name_, site = db_model
-        pid_list=[]
-        pid_list.append((None,pid))
+        pid_list = []
+        pid_list.append((None, pid))
 
         try:
             while True:
                 if process.poll() is not None:
                     db_remove_pid(pid_list)
-                    err=f"{strftime("%H:%M:%S")}: {colored(f"{name_} from {site} stopped", "yellow")}"
+                    err = f"{strftime("%H:%M:%S")}: {colored(f"{name_} from {site} stopped", "yellow")}"
                     del self
                     raise CaptureError(err)
         except CaptureError as e:
@@ -90,11 +90,11 @@ class CaptureStreamer:
             pass
         finally:
             sleep(9)
-            follow, block =query_db("cap_status",name_)
+            follow, block = db_cap_status(name_)
 
             if not bool(follow) or bool(block):
                 return None
-            
+
             data = Streamer(name_, "cb", "Chaturbate")
             if None in (streamer_data := CreateStreamer(data).return_data):
                 return None
@@ -113,11 +113,9 @@ class CaptureStreamer:
         db_model = StreamerWithPid(pid, self.name_, self.site)
 
         db_update_pid(db_model)
-        
+
         thread = Thread(
-            target=self.subprocess_status, 
-            args=(db_model, process), 
-            daemon=True
+            target=self.subprocess_status, args=(db_model, process), daemon=True
         )
         thread.start()
         del self

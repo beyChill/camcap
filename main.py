@@ -11,7 +11,6 @@ threads=[
     Thread(target=run_online_status, daemon=True)
     ]
 
-
 if __name__ == "__main__":
     setup_logging()
     db_init()

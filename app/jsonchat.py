@@ -5,7 +5,7 @@ import math
 import pandas as pd
 from time import perf_counter, strftime
 from httpx import AsyncClient
-from random import randint, choice, shuffle
+from random import randint, choice, shuffle, uniform
 from string import ascii_lowercase
 
 from termcolor import colored
@@ -43,7 +43,7 @@ async def get_data(client: AsyncClient, url):
 
     data_columns.append(
         data_frame[
-            ["username", "num_followers", "num_users", "start_timestamp"]
+            ["username", "num_followers", "num_users"]
         ].values.tolist()
     )
 
@@ -77,8 +77,10 @@ async def process_urls(i: int, urls: list[str]) -> None:
     # sleep time can be adjusted up / down til limit (response code:429 occurs)
     # error on the side of caution using short delay.
     if i < 1:
-        delay_ = randint(110, 150)
-        log.debug(f"{strftime("%H:%M:%S")}: Next streamer query in {str(timedelta(seconds = delay_))}")
+        delay_ = uniform(109.05, 150.78)
+        _, minutes, seconds = str(timedelta(seconds=delay_)).split(":")
+        seconds = round(float(seconds))
+        log.info(f"{strftime("%H:%M:%S")}: Next JSON processing: {minutes}min {seconds}sec")
         await asyncio.sleep(delay_)
 
     return None
@@ -162,8 +164,10 @@ async def query_streamers():
         )
 
         # Delay allows api rest between queries
-        delay_ = randint(240, 300)
-        log.info(f"Restarting site query in {str(timedelta(seconds = delay_))}")
+        delay_ = uniform(290.05, 605.7)
+        _, minutes, seconds = str(timedelta(seconds=delay_)).split(":")
+        seconds = round(float(seconds))
+        log.info(f"Next site query: {minutes}min {seconds}sec")
         await asyncio.sleep(delay_)
 
 

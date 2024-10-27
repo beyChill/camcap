@@ -1,5 +1,4 @@
 from logging import getLogger
-import httpx
 from httpx import AsyncClient
 from app.utils.constants import HEADERS_STREAM_URL, GetStreamerUrl
 

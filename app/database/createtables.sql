@@ -1,22 +1,20 @@
 CREATE TABLE IF NOT EXISTS chaturbate (
 streamer_name   VARCHAR(20) NOT NULL, 
-detail_date     DATETIME DEFAULT NULL,
-last_broadcast  TEXT DEFAULT NULL,
+last_broadcast  DEFAULT (datetime('now','localtime')),
+follow          DATETIME DEFAULT NULL,
 pid             INTEGER DEFAULT NULL,
 followers       INTEGER DEFAULT NULL,
 viewers         INTEGER DEFAULT NULL,
-most_viewers    INTEGER DEFAULT NULL,
-query_time      INTEGER DEFAULT 0,
+most_viewers    INTEGER DEFAULT 0,
 last_capture    DATETIME DEFAULT NULL,
-follow          DATETIME DEFAULT NULL,
 block_date      DATETIME DEFAULT NULL,
 notes           VARCHAR(25),
-created_on      DEFAULT (date('now','localtime')),
-model_status    VARCHAR(12),
 recorded        INTEGER DEFAULT NULL,
 review          INTEGER DEFAULT NULL,
 keep_           INTEGER DEFAULT NULL,
 storage         VARCHAR(12),
+created_on      DEFAULT (date('now','localtime')),
+detail_date     DATETIME DEFAULT NULL,
 PRIMARY KEY (streamer_name)
 );
 
