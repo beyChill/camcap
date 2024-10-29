@@ -1,14 +1,11 @@
-import asyncio
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from logging import getLogger
 from pathlib import Path
 from time import strftime
-
 from termcolor import colored
 from app.config.settings import get_settings
 from app.database.dbactions import db_add_streamer
-from app.sites.getstreamerurl import get_streamer_url
 from app.utils.constants import StreamerData, Streamer
 from collections.abc import Callable
 
@@ -32,51 +29,43 @@ class FileSvs:
 
 @dataclass(slots=True, eq=False)
 class CreateStreamer:
-    streamer_data: InitVar[Streamer]
-    name_: str = field(init=False)
-    site_slug: str = field(init=False)
-    site_name: str = field(init=False)
+    name_: str
+    success: bool
+    url: str
+    room_status: str
+    status_code: int
+    site_slug: str = field(init=False, default="CB")
+    site_name: str = field(init=False, default="Chaturbate")
     path_: Path = field(default=None, init=False)
     filename: str = field(default=None, init=False)
-    url: str = field(default=None, init=False)
     file_svs: Callable = field(init=False)
     metadata: list = field(default=None, init=False)
     return_data: StreamerData = field(default=None, init=False)
-    success: bool = field(default=None, init=False)
-    room_status: str = field(default=None, init=False)
-    status_code: int = field(default=None, init=False)
 
-    def __post_init__(
-        self, streamer_data: Streamer, filesvs=lambda: FileSvs()
-    ) -> StreamerData | None:
-        self.name_, self.site_slug, self.site_name = streamer_data
+    def __post_init__(self, filesvs=lambda: FileSvs()) -> StreamerData | None:
 
         self.file_svs = filesvs()
 
-        asyncio.run(self.get_url())
-
-        if not bool(self.success) and self.status_code != 429:
+        if not bool(self.success):
             log.error(f"{self.name_} is not a {self.site_name} streamer")
-            return self.return_dat()
+            return self.return_streamer()
 
         db_add_streamer(self.name_)
 
         if not bool(self.url) and self.status_code == 200:
-            log.info(colored(f"{strftime("%H:%M:%S")}: {self.name_} is {self.room_status}","yellow"))
+            log.info(
+                colored(
+                    f"{strftime("%H:%M:%S")}: {self.name_} is {self.room_status}",
+                    "yellow",
+                )
+            )
 
         self.path_ = self.file_svs.set_video_path(self.name_, self.site_name)
         self.filename = self.file_svs.set_filename(self.name_, self.site_slug)
         self.metadata = self.set_metadata(self.name_, self.site_name)
-        self.return_dat()
+        self.return_streamer()
 
         del self
-
-    async def get_url(self):
-        response = await get_streamer_url(self.name_)
-        self.success = response.success
-        self.url = response.url
-        self.room_status = response.room_status
-        self.status_code = response.status_code
 
     def set_metadata(self, name_, site) -> list:
         metadata = []
@@ -103,7 +92,7 @@ class CreateStreamer:
             metadata.extend(["-metadata", f"{key}={value}"])
         return metadata
 
-    def return_dat(self) -> StreamerData:
+    def return_streamer(self) -> StreamerData:
         self.return_data = StreamerData(
             self.name_,
             self.site_name,

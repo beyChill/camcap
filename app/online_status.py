@@ -1,8 +1,8 @@
 import asyncio
+from collections.abc import Iterable
 from datetime import timedelta
 from logging import getLogger
 from random import uniform
-from threading import Thread
 from time import perf_counter, strftime
 from httpx import AsyncClient
 from tabulate import tabulate
@@ -10,20 +10,10 @@ from termcolor import colored
 from app.database.dbactions import db_follow_offline, db_followed, db_recorded
 from app.sites.capture_streamer import CaptureStreamer
 from app.sites.create_streamer import CreateStreamer
-from app.utils.constants import HEADERS_IMG, Streamer
+from app.sites.getstreamerurl import get_streamer_url
+from app.utils.constants import HEADERS_IMG
 
 log = getLogger(__name__)
-
-
-def make_streamer(data):
-    if None in (streamer_data := CreateStreamer(data).return_data):
-        return None
-
-    CaptureStreamer(streamer_data)
-
-
-def start_cap(streamer_init):
-    [make_streamer(data) for data in streamer_init]
 
 
 def streamer_grouping(followed: list):
@@ -37,7 +27,7 @@ def streamer_grouping(followed: list):
     return streamer_groups
 
 
-async def get_data(client: AsyncClient, name_: str):
+async def get_data(client: AsyncClient, name_: str) -> tuple[int, str]:
     headers = {"path": f"/stream?room={name_}"}
 
     response = await client.get(
@@ -68,6 +58,7 @@ async def process_streamers(streamer_groups: list):
     log.debug(
         f"Processed {colored(len(results), "green")} streamers in: {colored(round(perf_counter() - start_, 4), 'green')} seconds"
     )
+
     return results
 
 
@@ -104,12 +95,12 @@ def online_tables(online):
         )
     )
     print()
-    return active_streamers
+
 
 
 def offline_tables(offline):
+    # CLI table
     if (offline_streamers := db_follow_offline(offline)) is None:
-        print("none online")
         return None
 
     offline_streamers.sort(key=lambda tup: tup[1], reverse=False)
@@ -125,7 +116,6 @@ def offline_tables(offline):
         )
     )
     print()
-    return offline_streamers
 
 
 async def get_online_streamers() -> None:
@@ -139,26 +129,15 @@ async def get_online_streamers() -> None:
     is_online = await process_streamers(streamer_groups)
     online, offline = sort_streamers(is_online)
 
-    offline_streamers = offline_tables(offline)
+    if len(offline) > 0:
+        offline_tables(offline)
 
     if len(online) > 0:
-        active_streamers = online_tables(online)
-        streamer_init = [
-            Streamer(streamer_name, "CB", "Chaturbate")
-            for streamer_name, *_ in active_streamers
-        ]
+        online_tables(online)
+        streamer_wUrl = await get_streamer_url(online)
+        cap_streamers = [CreateStreamer(*x).return_data for x in streamer_wUrl]
 
-        # CreateStreamer class (create_streamer.py) uses asyncio.run
-        # calling with a seperate class to avoid async loop errors
-        thread = Thread(
-            target=start_cap,
-            args=(streamer_init,),
-            daemon=True,
-        )
-        thread.start()
-        # thread.join()
-
-    await asyncio.sleep(0.03)
+        [CaptureStreamer(x) for x in cap_streamers if isinstance(x, Iterable)]
 
     return None
 
@@ -166,9 +145,7 @@ async def get_online_streamers() -> None:
 async def query_online():
     while True:
         start = perf_counter()
-        result = await get_online_streamers()
-        # if not bool(result):
-        #     pass
+        await get_online_streamers()
         log.info(
             f"{strftime("%H:%M:%S")}: Streamer check completed: {colored(round((perf_counter() - start), 4), "green")} seconds"
         )

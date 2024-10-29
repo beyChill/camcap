@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import os
 from cmd import Cmd
@@ -9,6 +10,7 @@ from app.errors.uivalidations import CliError, CliValidations
 from app.sites.capture_streamer import CaptureStreamer
 from app.sites.create_streamer import CreateStreamer
 import app.database.dbactions as dbase
+from app.sites.getstreamerurl import get_streamer_url
 
 
 log = getLogger(__name__)
@@ -25,13 +27,17 @@ class Cli(Cmd):
         if None in (data := CliValidations().check_input(line, self.user_prompt)):
             return None
 
+        dbase.db_add_streamer(data.name_)
+        
         if not None in (pid := dbase.db_get_pid(data.name_)):
             return None
+        
+        streamer_data = asyncio.run(get_streamer_url([data.name_]))
 
-        if None in (streamer_data := CreateStreamer(data).return_data):
+        if None in (streamer_data := [CreateStreamer(*x).return_data for x in streamer_data]):
             return None
 
-        CaptureStreamer(streamer_data)
+        [CaptureStreamer(x) for x in streamer_data]
 
         return None
 

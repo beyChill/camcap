@@ -1,20 +1,20 @@
+import asyncio
+from collections.abc import Iterable
+import subprocess
 from dataclasses import dataclass, field
-from datetime import datetime
 from io import TextIOWrapper
 from logging import DEBUG, getLogger
 from pathlib import Path
 from subprocess import DEVNULL, Popen
-import subprocess
 from threading import Thread
 from time import sleep, strftime
-
 from termcolor import colored
-
 from app.config.settings import get_settings
 from app.database.dbactions import db_cap_status, db_remove_pid, db_update_pid
-from app.errors.capture_errors import CaptureError
+from app.errors.custom_errors import CaptureError
 from app.sites.create_streamer import CreateStreamer
-from app.utils.constants import Streamer, StreamerData, StreamerWithPid
+from app.sites.getstreamerurl import get_streamer_url
+from app.utils.constants import StreamerData, StreamerWithPid
 
 log = getLogger(__name__)
 
@@ -36,6 +36,7 @@ class CaptureStreamer:
     process: Popen[bytes] = field(init=False)
 
     def __post_init__(self):
+        
         self.metadata = self.data.metadata
         self.path_ = self.data.path_.mkdir(parents=True, exist_ok=True)
         self.name_ = self.data.name_
@@ -95,11 +96,11 @@ class CaptureStreamer:
             if not bool(follow) or bool(block):
                 return None
 
-            data = Streamer(name_, "cb", "Chaturbate")
-            if None in (streamer_data := CreateStreamer(data).return_data):
-                return None
+            data = asyncio.run(get_streamer_url([name_]))
 
-            CaptureStreamer(streamer_data)
+            re_streamer=[CreateStreamer(*x).return_data for x in data if isinstance(x, Iterable)]
+
+            [CaptureStreamer(x) for x in re_streamer if isinstance(x, Iterable)]
 
     def activate(self):
         process = Popen(
