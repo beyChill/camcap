@@ -98,6 +98,11 @@ def stop_capturing(name_):
     if not _write_to_db(sql, args):
         log.error(colored(f"Unable to stop capture for {name_}", "red"))
 
+def db_unfollow(name_):
+    sql = "UPDATE chaturbate SET follow=? WHERE streamer_name=?"
+    args = (None, name_)
+    if not _write_to_db(sql, args):
+        log.error(colored(f"Unable to stop following {name_}", "red"))
 
 def block_capture(data):
     name_, *reason = data
@@ -148,6 +153,7 @@ def _db_executemany(sql: str, values: list):
 # * query
 # ************************************
 
+
 def fetchone(cursor) -> sqlite3.Cursor:
     return cursor.fetchone()
 
@@ -160,6 +166,7 @@ CURSOR_TYPE: Dict[str, Callable] = {
     "all": fetchall,
     "one": fetchone,
 }
+
 
 def query_db2(sql: str, action: str = "all"):
     try:
@@ -252,6 +259,25 @@ def db_all_pids():
     sql = "SELECT pid FROM chaturbate WHERE pid IS NOT NULL"
 
     result: list[tuple[int]] = query_db2(sql)
+
+    return result
+
+
+def db_capture(value):
+    sql = f"SELECT streamer_name, follow, recorded FROM chaturbate WHERE pid IS NOT NULL ORDER BY {value}"
+
+    result: list[tuple[str, str, int | None]] = query_db2(sql)
+
+    return result
+
+
+def db_offline(value):
+    sql = f"""SELECT streamer_name, follow, recorded 
+        FROM chaturbate 
+        WHERE pid IS NULL AND follow IS NOT NULL AND block_date IS NULL 
+        ORDER BY {value}"""
+
+    result: list[tuple[str, str, int | None]] = query_db2(sql)
 
     return result
 
