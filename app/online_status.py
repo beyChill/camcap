@@ -78,6 +78,10 @@ def sort_streamers(is_online: list[tuple[int, str]]):
 
 def online_tables(online):
     # CLI table
+    if getattr(online_tables, 'has_run', False):
+        return
+
+    online_tables.has_run = True
     if (active_streamers := db_recorded(online)) is None:
         print("none online")
         return None
@@ -100,6 +104,10 @@ def online_tables(online):
 
 def offline_tables(offline):
     # CLI table
+    if getattr(offline_tables, 'has_run', False):
+        return
+
+    offline_tables.has_run = True
     if (offline_streamers := db_follow_offline(offline)) is None:
         return None
 
