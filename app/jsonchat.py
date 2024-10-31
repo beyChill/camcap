@@ -5,7 +5,7 @@ import math
 import pandas as pd
 from time import perf_counter, strftime
 from httpx import AsyncClient
-from random import randint, choice, shuffle, uniform
+from random import choice, shuffle, uniform
 from string import ascii_lowercase
 
 from termcolor import colored
@@ -35,7 +35,7 @@ async def get_data(client: AsyncClient, url):
         await asyncio.sleep(17)
         return [[random_id(10), 0, 0, 1728930711]]
 
-    # Zero lenght element means url offset doesn't exist
+    # Zero length element means url offset doesn't exist
     if len(response.json()["rooms"]) < 1:
         return [[random_id(10), 0, 0, 1728930711]]
 
