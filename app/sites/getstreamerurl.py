@@ -1,11 +1,10 @@
 import asyncio
-from dataclasses import dataclass, field
 from logging import getLogger
-from time import perf_counter, strftime
+from time import perf_counter
 from httpx import AsyncClient
 from termcolor import colored
 from app.errors.custom_errors import GetDataError
-from app.utils.constants import HEADERS_STREAM_URL, GetStreamerUrl, StreamerData
+from app.utils.constants import HEADERS_STREAM_URL, GetStreamerUrl
 
 log = getLogger(__name__)
 
