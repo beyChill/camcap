@@ -1,0 +1,2 @@
+INSERT INTO chaturbate (streamer_name,block_date, notes) SELECT streamer_name,block_date,notes from cc.models where streamer_name="tammy_lyn__" ON CONFLICT DO UPDATE SET block_date=EXCLUDED.block_date, notes=EXCLUDED.notes
+INSERT INTO chaturbate (streamer_name,block_date, notes) SELECT streamer_name,block_date,notes from cc.models where streamer_name="tammy_lyn__" ON CONFLICT DO UPDATE SET block_date=EXCLUDED.block_date, notes=EXCLUDED.notes

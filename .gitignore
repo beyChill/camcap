@@ -176,8 +176,5 @@ app/database/db/
 app/errors/error_logs/
 
 # test
-p.py
-h.py
-g.py
 *copy*
-main.py
+*main*

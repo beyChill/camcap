@@ -40,13 +40,14 @@ async def get_data(client: AsyncClient, name_: str):
         timeout=15,
     )
 
-    data = response.json()
-
     try:
         if response.status_code == 429:
             raise GetDataError(name_, "429", response.status_code, __loader__.name)
         if response.status_code != 200:
             raise GetDataError(name_, "not200", response.status_code, __loader__.name)
+        
+        data = response.json()
+
         if not bool(data["success"]):
             raise GetDataError(name_, "notfound", response.status_code, __loader__.name)
     except GetDataError as e:

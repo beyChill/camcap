@@ -32,11 +32,13 @@ class Cli(Cmd):
             return None
 
         streamer_data = asyncio.run(get_streamer_url([data.name_]))
+
         streamer: GetStreamerUrl = streamer_data[0]
 
         dbase.db_add_streamer(streamer.name_)
 
         if not None in (dbase.db_get_pid(streamer.name_)):
+            log.info(f"Already capturing {colored(streamer.name_,"green")} from {data.site}")
             return None
 
         if None in (
@@ -90,19 +92,19 @@ class Cli(Cmd):
         self.do_unfollow(line)
 
     def do_cap(self, line) -> None:
-        options = {
+        sort_options = {
             "name": "streamer_name",
             "date": "follow",
-            "number": "recorded",
+            "num": "recorded",
         }
-        line = line.split()[0]
-        value = options[line]
-
-        query = dbase.db_capture(value)
-
-        if query == []:
+        if not (sort := CliValidations().check_table(line)):
+            return None
+        
+        value = sort_options.get(sort)
+        
+        if not (query := dbase.db_capture(value)):
             print("Presently capturing zero streamers")
-            return
+            return None
 
         head = ["Streamers", "following", "# Caps"]
         print(
@@ -115,21 +117,21 @@ class Cli(Cmd):
         )
 
     def do_offline(self, line) -> None:
-        options = {
+        sort_options = {
             "name": "streamer_name",
             "date": "follow",
-            "number": "recorded",
+            "num": "recorded",
         }
-        line = line.split()[0]
-        value = options[line]
+        if not (sort := CliValidations().check_table(line)):
+            return None
+        
+        value = sort_options.get(sort)
 
-        query = dbase.db_offline(value)
+        if not (query := dbase.db_offline(value)):
+            print("Following zero streamers")
+            return None
 
-        if query == []:
-            print("Following zero offline streamers")
-            return
-
-        head = ["Streamers", "following", "# Caps"]
+        head = ["Streamers", "Recent Stream", "# Caps"]
         print(
             tabulate(
                 query,

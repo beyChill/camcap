@@ -46,7 +46,7 @@ async def process_streamers(streamer_groups: list):
         async with asyncio.TaskGroup() as group:
             results = []
 
-            for i, streamers in enumerate(streamer_groups):
+            for _, streamers in enumerate(streamer_groups):
                 for streamer in streamers:
                     task = group.create_task(get_data(client, streamer))
                     task.add_done_callback(lambda t: results.append(t.result()))
@@ -56,7 +56,7 @@ async def process_streamers(streamer_groups: list):
                 #     await asyncio.sleep(round(uniform(2, 4), 1))
 
     log.debug(
-        f"Processed {colored(len(results), "green")} streamers in: {colored(round(perf_counter() - start_, 4), 'green')} seconds"
+        f"Api queried {colored(len(results), "green")} streamer(s) in: {colored(round(perf_counter() - start_, 4), 'green')} seconds"
     )
 
     return results
@@ -78,7 +78,7 @@ def sort_streamers(is_online: list[tuple[int, str]]):
 
 def online_tables(online):
     # CLI table
-    if getattr(online_tables, 'has_run', False):
+    if getattr(online_tables, "has_run", False):
         return
 
     online_tables.has_run = True
@@ -101,10 +101,9 @@ def online_tables(online):
     print()
 
 
-
 def offline_tables(offline):
     # CLI table
-    if getattr(offline_tables, 'has_run', False):
+    if getattr(offline_tables, "has_run", False):
         return
 
     offline_tables.has_run = True

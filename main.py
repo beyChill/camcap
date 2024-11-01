@@ -6,10 +6,10 @@ from app.online_status import run_online_status
 from app.ui.commandline import Cli
 
 
-threads=[
+threads = [
     Thread(target=run_query_json, daemon=True),
-    Thread(target=run_online_status, daemon=True)
-    ]
+    Thread(target=run_online_status, daemon=True),
+]
 
 if __name__ == "__main__":
     setup_logging()
@@ -18,4 +18,3 @@ if __name__ == "__main__":
         thread.start()
 
     Cli().cmdloop()
-

@@ -11,7 +11,6 @@ from time import sleep, strftime
 from termcolor import colored
 from app.config.settings import get_settings
 from app.database.dbactions import db_cap_status, db_remove_pid, db_update_pid
-from app.errors.custom_errors import CaptureError
 from app.sites.create_streamer import CreateStreamer
 from app.sites.getstreamerurl import get_streamer_url
 from app.utils.constants import StreamerData, StreamerWithPid
@@ -83,11 +82,9 @@ class CaptureStreamer:
             while True:
                 if process.poll() is not None:
                     db_remove_pid(pid_list)
-                    err = f"{strftime("%H:%M:%S")}: {colored(f"{name_} from {site} stopped", "yellow")}"
+                    log.debug(f"{strftime("%H:%M:%S")}: {colored(f"{name_}-{site} subprocess stopped", "yellow")}")
                     del self
-                    raise CaptureError(err)
-        except CaptureError as e:
-            log.info(e.msg)
+        except Exception:
             pass
         finally:
             sleep(9)

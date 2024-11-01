@@ -80,7 +80,7 @@ async def process_urls(i: int, urls: list[str]) -> None:
         delay_ = uniform(109.05, 150.78)
         _, minutes, seconds = str(timedelta(seconds=delay_)).split(":")
         seconds = round(float(seconds))
-        log.info(f"{strftime("%H:%M:%S")}: Next JSON processing: {minutes}min {seconds}sec")
+        log.info(f"{strftime("%H:%M:%S")}: Next JSON batch process: {minutes}min {seconds}sec")
         await asyncio.sleep(delay_)
 
     return None
@@ -120,7 +120,7 @@ def generate_urls(base_url: str, streamers_online: int) -> list[str]:
 
 
 def url_grouping(json_urls: list[str]) -> list[list[str]]:
-    # minimize response code 429.
+    # minimize chance for response code 429.
     rate_limit = math.floor(len(json_urls) / 2)
 
     url_groups = [

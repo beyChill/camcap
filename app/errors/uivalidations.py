@@ -58,7 +58,7 @@ class CliValidations:
 
         cls.site_slug = rest
 
-    def slug_to_site(self)  -> None:
+    def slug_to_site(self) -> None:
         self.site_name = SITENAME.get(self.site_slug)
 
     def check_input(self, line: str, prompt) -> Streamer:
@@ -76,3 +76,24 @@ class CliValidations:
         except CliErrors as e:
             print(e)
             return Streamer(None, None, None)
+
+    @classmethod
+    def input_table(cls, line: str):
+        if not bool(line.split()):
+            raise CliErrors("", "input_table",  "num = number")
+        return line.split()
+
+    @classmethod
+    def check_sort(cls, sort: str):
+        if sort not in ["name", "date", "num"]:
+            raise CliErrors("", "input_table", "num = number")
+
+    @classmethod
+    def check_table(cls, line: str):
+        try:
+            sort, *_ = cls.input_table(line)
+            cls.check_sort(sort)
+            return sort
+        except CliErrors as e:
+            print(e)
+            return None
