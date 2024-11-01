@@ -272,7 +272,7 @@ def db_capture(value):
 
 
 def db_offline(value):
-    sql = f"""SELECT streamer_name, follow, recorded 
+    sql = f"""SELECT streamer_name, last_broadcast, recorded 
         FROM chaturbate 
         WHERE pid IS NULL AND follow IS NOT NULL AND block_date IS NULL 
         ORDER BY {value}"""
